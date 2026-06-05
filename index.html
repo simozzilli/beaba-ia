@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Beaba.ai — Informações sobre Câncer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+    background: #d6eef3;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  /* BOX WRAPPER */
+  .app-box {
+    width: 100%;
+    max-width: 520px;
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.13);
+    display: flex;
+    flex-direction: column;
+    height: 88vh;
+    max-height: 800px;
+  }
+
+  /* HEADER */
+  header {
+    background: #3bbfce;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  header .title { color: #fff; }
+  header .title h1 { font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
+  header .title p { font-size: 0.94rem; opacity: 0.9; }
+
+  /* MAIN LAYOUT */
+  .container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* CANCER TYPE FILTERS */
+  .filters {
+    padding: 12px 16px 8px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    background: #fff;
+    border: 1.5px solid #3bbfce;
+    color: #3bbfce;
+    border-radius: 20px;
+    padding: 5px 13px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all .15s;
+    font-weight: 500;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: #3bbfce;
+    color: #fff;
+  }
+
+  /* MESSAGES */
+  #messages {
+    flex: 1;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+
+  .msg { display: flex; gap: 8px; align-items: flex-start; }
+  .msg.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--avatar-color, #3bbfce); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .msg.user .avatar { background: #e8f6f8; }
+
+  .bubble {
+    max-width: 82%;
+    padding: 11px 14px;
+    border-radius: 16px;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: #2d3748;
+  }
+  .msg.bot .bubble {
+    background: #eaf5f7;
+    border-radius: 4px 16px 16px 16px;
+    box-shadow: none;
+  }
+  .msg.user .bubble {
+    background: #3bbfce;
+    color: #fff;
+    border-radius: 16px 4px 16px 16px;
+  }
+
+  .bubble .cancer-tag {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .bubble img { width: 100%; max-width: 220px; display: block; margin: 10px auto 4px; border-radius: 12px; }
+  .bubble .source { font-size: 0.72rem; color: #8a9bb0; margin-top: 8px; font-style: italic; }
+  .bubble strong { font-weight: 700; }
+
+  /* SUGGESTIONS */
+  #suggestions {
+    padding: 8px 16px 4px;
+  }
+  #suggestions p {
+    font-size: 0.8rem;
+    color: #7a8fa0;
+    margin-bottom: 9px;
+    font-weight: 500;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    max-height: 72px;
+    overflow: hidden;
+  }
+  .chip {
+    background: #fff;
+    border: 1.5px solid #3bbfce;
+    border-radius: 20px;
+    padding: 5px 13px;
+    font-size: 0.78rem;
+    color: #3bbfce;
+    cursor: pointer;
+    transition: all .15s;
+    font-weight: 500;
+  }
+  .chip:hover { background: #e8f6f8; }
+
+  /* TYPING */
+  .typing { display: flex; gap: 5px; padding: 8px 12px; align-items: center; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #3bbfce; animation: bounce .8s infinite; }
+  .dot:nth-child(2) { animation-delay: .15s; }
+  .dot:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+
+  /* INPUT */
+  .input-area {
+    background: #fff;
+    border-top: 1px solid #e0eef2;
+    padding: 12px 16px;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  #userInput {
+    flex: 1;
+    border: 1.5px solid #c8e6eb;
+    border-radius: 22px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color .15s;
+    background: #f7fbfc;
+  }
+  #userInput:focus { border-color: #3bbfce; background: #fff; }
+  #sendBtn {
+    background: #3bbfce;
+    border: none;
+    border-radius: 50%;
+    width: 42px; height: 42px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  #sendBtn:hover { background: #2da8b8; }
+  #sendBtn svg { color: #fff; }
+
+  /* DISCLAIMER */
+  .disclaimer {
+    font-size: 0.7rem;
+    color: #9ab;
+    text-align: center;
+    padding: 4px 16px 10px;
+  }
+</style>
+</head>
+<body>
+<div class="app-box">
+
+<header>
+  <img src="Logo.svg" width="48" height="48" alt="Beaba" style="flex-shrink:0;">
+  <div class="title">
+    <h1>Beaba.ia</h1>
+    <p>O be-a-bá do câncer com inteligência artificial.</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- FILTER BUTTONS -->
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-filter="todos" data-color="#3bbfce">todos</button>
+    <button class="filter-btn" data-filter="infantil" data-color="#3bbfce">infantojuvenil</button>
+    <button class="filter-btn" data-filter="mama" data-color="rgb(255 143 178)" style="border-color:rgb(255 143 178);color:rgb(255 143 178);">mama</button>
+    <button class="filter-btn" data-filter="prostata" data-color="rgb(120 193 233)" style="border-color:rgb(120 193 233);color:rgb(120 193 233);">próstata</button>
+    <button class="filter-btn" data-filter="leucemia" data-color="rgb(255 180 71)" style="border-color:rgb(255 180 71);color:rgb(255 180 71);">leucemia</button>
+    <button class="filter-btn" data-filter="intestino" data-color="rgb(74 123 191)" style="border-color:rgb(74 123 191);color:rgb(74 123 191);">intestino</button>
+    <button class="filter-btn" data-filter="pulmao" data-color="rgb(166 161 161)" style="border-color:rgb(166 161 161);color:rgb(166 161 161);">pulmão</button>
+    <button class="filter-btn" data-filter="utero" data-color="rgb(187 145 234)" style="border-color:rgb(187 145 234);color:rgb(187 145 234);">útero</button>
+  </div>
+
+  <!-- MESSAGES -->
+  <div id="messages"></div>
+
+  <!-- SUGGESTIONS -->
+  <div id="suggestions">
+    <p>Perguntas frequentes:</p>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="disclaimer">
+    As informações aqui são educativas e não substituem a consulta médica.<br>Fontes: Guia Beaba do Câncer e INCA.
+  </div>
+</div>
+
+<!-- INPUT -->
+<div class="input-area">
+  <input type="text" id="userInput" placeholder="Qual é a sua dúvida?" autocomplete="off" />
+  <button id="sendBtn" onclick="handleSend()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </svg>
+  </button>
+</div>
+
+<script>
+// ─── KNOWLEDGE BASE ───────────────────────────────────────────────────────────
+// Fontes: Guia Beaba do Câncer 4ª ed. + INCA (gov.br/inca)
+const knowledge = [
+
+  // ════════════════════════════════════════════════
+  // GERAL / O QUE É CÂNCER
+  // ════════════════════════════════════════════════
+  {
+    id: 'cancer-o-que-e',
+    type: 'geral',
+    typeLabel: '🌟 Geral',
+    typeColor: '#3bbfce',
+    keys: ['o que e cancer','o que é câncer','o que e o cancer','o que e um cancer','cancer e uma doenca','celulas cancerigas','celulas cancerígenas'],
+    title: 'O que é câncer?',
+    text: `O <strong>câncer</strong> é o nome que damos para um grupo de doenças em que células do nosso próprio corpo começam a crescer de forma desordenada — como se perdessem o freio. 🔬\n\nNormalmente, nossas células crescem, fazem seu trabalho e se renovam em um ritmo certinho. No câncer, algo muda nesse processo: as células se multiplicam demais, formam uma massa (o <strong>tumor</strong>) e podem se espalhar para outras partes do corpo.\n\nImportante saber: existem <strong>mais de 100 tipos diferentes</strong> de câncer, cada um com características, tratamentos e chances de cura próprias. Muitos têm altíssima taxa de cura quando detectados cedo! 💪`,
+    source: 'Guia Beaba do Câncer, 4ª ed. · INCA'
+  },
+  {
+    id: 'tratamento-geral',
+    type: 'geral',
+    typeLabel: '🌟 Geral',
+    typeColor: '#3bbfce',
+    keys: ['tratamento','quimioterapia','radioterapia','imunoterapia','hormonioterapia','cirurgia','tipos de tratamento'],
+    title: 'Quais são os tipos de tratamento?',
+    text: `Os principais tipos de tratamento do câncer são:\n\n<strong>💊 Quimioterapia</strong> — remédios que combatem as células cancerígenas. Podem ser tomados pela boca ou pela veia.\n\n<strong>☢️ Radioterapia</strong> — raios de alta energia direcionados ao tumor, como uma "lupa" de precisão.\n\n<strong>🔪 Cirurgia</strong> — remoção do tumor pelo médico. Muitas vezes é o primeiro passo do tratamento.\n\n<strong>🧬 Imunoterapia</strong> — ativa o sistema de defesa do próprio corpo para reconhecer e atacar o câncer.\n\n<strong>💉 Hormonioterapia</strong> — bloqueia hormônios que alimentam certos tumores (muito usado no câncer de mama e próstata).\n\nO médico pode usar um ou mais tratamentos ao mesmo tempo ou em sequência — sempre pensando no melhor para cada pessoa. 🌱`,
+    source: 'Guia Beaba do Câncer, 4ª ed.'
+  },
+  {
+    id: 'cabelo',
+    type: 'geral',
+    typeLabel: '🌟 Geral',
+    typeColor: '#3bbfce',
+    keys: ['cabelo','queda de cabelo','alopecia','vai perder o cabelo','perder cabelo'],
+    title: 'A quimioterapia causa queda de cabelo?',
+    text: `A queda de cabelo (<strong>alopecia</strong>) é um dos efeitos colaterais mais conhecidos da quimioterapia — mas não acontece com todos os tratamentos nem com todos os remédios. 💆\n\nAlguns quimioterápicos afetam os folículos capilares porque, assim como as células cancerígenas, eles também se dividem rapidamente. O cabelo pode começar a cair entre 2 a 4 semanas após o início do tratamento.\n\nA <strong>boa notícia</strong>: o cabelo volta a crescer depois que o tratamento termina! 🌱 Em alguns casos, a textura pode ser um pouco diferente por um tempo — isso varia de pessoa para pessoa.\n\nExistem técnicas como a <strong>touca de resfriamento</strong> que podem reduzir a queda em alguns tipos de quimioterapia — pergunte ao médico se essa opção é adequada.`,
+    source: 'Guia Beaba do Câncer, 4ª ed.'
+  },
+  {
+    id: 'metastase',
+    type: 'geral',
+    typeLabel: '🌟 Geral',
+    typeColor: '#3bbfce',
+    keys: ['metastase','metástase','espalhou','espalhado','disseminou'],
+    title: 'O que é metástase?',
+    text: `<strong>Metástase</strong> é quando células cancerígenas se desprendem do tumor original e viajam pelo sangue ou linfa para outros órgãos, onde formam novos tumores. 🌊\n\nExemplo: um câncer de mama que se espalha para os pulmões é chamado de metástase pulmonar de câncer de mama — não é um "câncer de pulmão", é o mesmo câncer em outro lugar.\n\nQuando a metástase está presente, o tratamento muda de objetivo: em vez de curar, o foco muitas vezes é <strong>controlar a doença</strong>, reduzir sintomas e manter a qualidade de vida — o que hoje é possível por muito mais tempo do que no passado, graças aos avanços nos tratamentos. 💙`,
+    source: 'Guia Beaba do Câncer, 4ª ed. · INCA'
+  },
+  {
+    id: 'estadiamento',
+    type: 'geral',
+    typeLabel: '🌟 Geral',
+    typeColor: '#3bbfce',
+    keys: ['estadiamento','estagio do cancer','estágio do câncer','estadio do cancer','fase do cancer','fase do câncer','o que e estagio','o que é estágio','stage'],
+    title: 'O que é estágio / estadiamento?',
+    text: `O <strong>estadiamento</strong> é a forma que os médicos usam para descrever o quanto o câncer se desenvolveu e se espalhou. É como um "mapa" da doença. 🗺️\n\nA escala mais usada vai de <strong>I a IV</strong>:\n\n🟢 <strong>Estágio I</strong> — tumor pequeno, localizado. Altas chances de cura.\n🟡 <strong>Estágio II</strong> — tumor maior, mas ainda bem localizado.\n🟠 <strong>Estágio III</strong> — tumor se espalhou para linfonodos ou tecidos próximos.\n🔴 <strong>Estágio IV</strong> — metástase (espalhou para outros órgãos). Tratamento com foco em controle.\n\nO estadiamento determina o tratamento mais adequado. Lembre: mesmo estágios avançados têm tratamento e muitas pessoas vivem anos com qualidade de vida! 💪`,
+    source: 'INCA · Guia Beaba do Câncer, 4ª ed.'
+  },
+
+  // ════════════════════════════════════════════════
+  // INFANTOJUVENIL
+  // ════════════════════════════════════════════════
+  {
+    id: 'infantil-o-que-e',
+    type: 'infantil',
+    typeLabel: '🐻 Infantil',
+    typeColor: '#3bbfce',
+    keys: ['cancer infantil','câncer infantil','cancer em crianca','câncer em criança','cancer pediatrico','crianca com cancer','criança com câncer','leucemia infantil','tumor infantil'],
+    title: 'Câncer infantil: o que é?',
+    text: `O <strong>câncer infantojuvenil</strong> ocorre em crianças e adolescentes até os 19 anos. É diferente do câncer em adultos: os tipos mais comuns, as causas e até a resposta ao tratamento são bem distintos. 🐻\n\nA <strong>boa notícia</strong>: o câncer infantil tem taxa de cura que pode ultrapassar <strong>80%</strong> quando diagnosticado e tratado em centros especializados. É um dos tipos de câncer com melhor resposta ao tratamento!\n\nOs tipos mais frequentes em crianças são:\n• <strong>Leucemias</strong> (câncer do sangue) — o mais comum\n• <strong>Tumores do sistema nervoso central</strong> (ex: meduloblastoma)\n• <strong>Linfomas</strong>\n• <strong>Tumor de Wilms</strong> (rim)\n• <strong>Neuroblastoma</strong> (sistema nervoso)`,
+    source: 'Guia Beaba do Câncer, 4ª ed. · INCA'
+  },
+  {
+    id: 'infantil-sinais',
+    type: 'infantil',
+    typeLabel: '🐻 Infantil',
+    typeColor: '#3bbfce',
+    keys: ['sinais cancer criança','sintomas crianca','sinais criança','como saber se crianca tem cancer','febre sem causa','olho branco','reflexo branco'],
+    title: 'Sinais de alerta no câncer infantil',
+    text: `O câncer infantil muitas vezes se parece com doenças comuns no começo. Por isso, é importante ficar atento a sinais que persistem ou que parecem estranhos. ⚠️\n\nFique de olho em:\n• <strong>Febre sem causa aparente</strong> que não passa\n• <strong>Palidez intensa</strong> e cansaço excessivo\n• <strong>Manchas roxas</strong> (hematomas) sem bater em nada\n• <strong>Dores de cabeça persistentes</strong>, especialmente de manhã\n• <strong>Inchaço no pescoço, axila ou virilha</strong> (linfonodos)\n• <strong>Reflexo branco no olho</strong> em fotos com flash (sinal de retinoblastoma)\n• <strong>Perda de peso</strong> sem motivo\n• <strong>Mancar ou dor nos ossos</strong> sem causa aparente\n\nEsses sinais não significam necessariamente câncer — mas devem ser avaliados por um médico! 🩺`,
+    source: 'Guia Beaba do Câncer, 4ª ed. · INCA'
+  },
+  {
+    id: 'infantil-tratamento',
+    type: 'infantil',
+    typeLabel: '🐻 Infantil',
+    typeColor: '#3bbfce',
+    keys: ['tratamento criança','tratar criança com cancer','escola durante tratamento','criança quimio','crianca quimioterapia'],
+    title: 'Como é o tratamento do câncer infantil?',
+    text: `O tratamento do câncer em crianças é feito em centros de oncologia pediátrica, com uma equipe multidisciplinar: oncologista, enfermeiros, psicólogos, nutricionistas e muito mais. 💛\n\nOs tipos de tratamento mais usados em crianças são:\n• <strong>Quimioterapia</strong> — muito eficaz em câncer infantil\n• <strong>Radioterapia</strong> — com cuidados extras para não afetar o crescimento\n• <strong>Cirurgia</strong> — para remover tumores sólidos\n• <strong>Transplante de células-tronco</strong> — em casos específicos\n\n<strong>Sobre a escola:</strong> muitas crianças continuam estudando durante o tratamento, nos momentos em que estão bem! Algumas escolas têm programas de acompanhamento domiciliar. Manter a rotina escolar ajuda emocionalmente. 📚\n\nNo Brasil, o <strong>SUS</strong> oferece tratamento completo e gratuito para o câncer infantojuvenil.`,
+    source: 'Guia Beaba do Câncer, 4ª ed. · INCA'
+  },
+  {
+    id: 'medula',
+    type: 'infantil',
+    typeLabel: '🐻 Infantil',
+    typeColor: '#3bbfce',
+    keys: ['medula','transplante de medula','transplante medula ossea','biopsia de medula','punção lombar'],
+    title: 'O que é transplante de medula óssea?',
+    text: `A <strong>medula óssea</strong> é onde o nosso sangue é produzido — fica dentro dos ossos e fabrica glóbulos vermelhos, brancos e plaquetas. 🩸\n\nO <strong>transplante de medula óssea</strong> (ou transplante de células-tronco hematopoéticas) substitui a medula doente por células saudáveis — do próprio paciente (autólogo) ou de um doador (alogênico).\n\nComo é o processo:\n1️⃣ Quimioterapia intensa para eliminar as células doentes\n2️⃣ Infusão das células-tronco saudáveis pela veia\n3️⃣ Período de isolamento enquanto as células "pegam" e reconstroem o sangue\n\nÉ um tratamento sério, mas que salva muitas vidas — especialmente em leucemias e linfomas. O maior desafio é encontrar um <strong>doador compatível</strong>. Cadastre-se no REDOME! 💙`,
+    source: 'Guia Beaba do Câncer, 4ª ed.'
+  },
+
+  // ════════════════════════════════════════════════
+  // CÂNCER DE MAMA
+  // ════════════════════════════════════════════════
+  {
+    id: 'mama-o-que-e',
+    type: 'mama',
+    typeLabel: '🌸 Mama',
+    typeColor: 'rgb(255 143 178)',
+    keys: ['cancer de mama','câncer de mama','tumor de mama','o que é cancer de mama'],
+    title: 'O que é câncer de mama?',
+    text: `O <strong>câncer de mama</strong> é causado pela multiplicação desordenada de células anormais na mama, que formam um tumor com potencial de se espalhar. 🌸\n\nÉ o tipo de câncer mais frequente entre as mulheres brasileiras (depois do câncer de pele não-melanoma), mas também ocorre em homens — neles, representa cerca de 1% dos casos.\n\nExistem vários subtipos de câncer de mama — alguns crescem rápido, outros lentamente. A <strong>maioria dos casos tem bom prognóstico</strong> quando tratados adequadamente e diagnosticados cedo. O SUS oferece tratamento completo e gratuito. 💪`,
+    source: 'INCA · Beaba do Câncer de Mama',
+    image: 'https://www.femama.org.br/site/wp-content/themes/femama/img/ilustracoes/tres-mulheres.svg'
+  },
+  {
+    id: 'mama-sintomas',
+    type: 'mama',
+    typeLabel: '🌸 Mama',
+    typeColor: 'rgb(255 143 178)',
+    keys: ['sintomas mama','sinais mama','nodulo mama','nódulo mama','caroço mama','como saber se é cancer de mama'],
+    title: 'Sinais e sintomas do câncer de mama',
+    text: `O câncer de mama pode dar sinais. Fique atenta a: 🔍\n\n• <strong>Nódulo (caroço)</strong> na mama ou na axila — especialmente se for duro e fixo\n• <strong>Saída espontânea de líquido</strong> de um mamilo (sem apertar)\n• <strong>Mudança na pele</strong> da mama: vermelhidão, espessamento, aspecto de "casca de laranja"\n• <strong>Retração</strong> do mamilo ou da pele\n• <strong>Mama ficando maior</strong> progressivamente sem motivo\n• <strong>Ferida na pele</strong> que não cicatriza\n\nImportante: muitos caroços na mama <strong>não são câncer</strong> — podem ser cistos ou fibroadenomas benignos. Mas qualquer nódulo deve ser avaliado pelo médico. 🩺`,
+    source: 'INCA · Beaba do Câncer de Mama',
+    image: 'https://www.femama.org.br/site/wp-content/themes/femama/img/ilustracoes/sinaisesintomas/woman2.svg'
+  },
+  {
+    id: 'mamografia',
+    type: 'mama',
+    typeLabel: '🌸 Mama',
+    typeColor: 'rgb(255 143 178)',
+    keys: ['mamografia','rastreamento mama','exame mama','ultrassom mama','detecção precoce mama'],
+    title: 'Mamografia: quando fazer?',
+    text: `A <strong>mamografia</strong> é o exame de raio-x das mamas — o principal método para detectar o câncer de mama precocemente, antes mesmo de dar sintomas. 📷\n\nAs recomendações do INCA:\n• Mulheres entre <strong>50 e 69 anos</strong>: mamografia a cada 2 anos (via SUS)\n• Mulheres com <strong>alto risco</strong> (histórico familiar, mutação genética): iniciar mais cedo, em geral aos 35 anos — o médico vai orientar\n\nO exame é um pouco desconfortável mas rápido. Vale muito a pena! O câncer detectado pequeninho tem muito mais chance de cura. 🌟\n\n<strong>Dica:</strong> marque a mamografia na Unidade Básica de Saúde mais próxima — é gratuita pelo SUS.`,
+    source: 'INCA'
+  },
+  {
+    id: 'mama-tratamento',
+    type: 'mama',
+    typeLabel: '🌸 Mama',
+    typeColor: 'rgb(255 143 178)',
+    keys: ['tratamento mama','quimioterapia mama','cirurgia mama','mastectomia','hormonioterapia mama'],
+    title: 'Tratamentos do câncer de mama',
+    text: `O tratamento do câncer de mama depende do tipo de tumor, do estágio e das características da paciente. Pode incluir: 💊\n\n<strong>🔪 Cirurgia</strong> — pode ser conservadora (remove só o tumor) ou mastectomia (remove a mama). A cirurgia conservadora é cada vez mais usada.\n\n<strong>💊 Quimioterapia</strong> — pode ser antes da cirurgia (para diminuir o tumor) ou depois (para eliminar células que possam ter escapado).\n\n<strong>☢️ Radioterapia</strong> — muito usada após cirurgia conservadora.\n\n<strong>💉 Hormonioterapia</strong> — para tumores que crescem estimulados por hormônios (os mais comuns). Dura em geral 5 a 10 anos.\n\n<strong>🧬 Terapia-alvo (anti-HER2)</strong> — para tumores HER2+, com medicamentos como trastuzumabe.\n\nO SUS disponibiliza todos esses tratamentos gratuitamente. 💙`,
+    source: 'INCA · Beaba do Câncer de Mama',
+    image: 'https://www.femama.org.br/site/wp-content/themes/femama/img/ilustracoes/tratamentos/tipos/quimioterapia.svg'
+  },
+  {
+    id: 'her2',
+    type: 'mama',
+    typeLabel: '🌸 Mama',
+    typeColor: 'rgb(255 143 178)',
+    keys: ['her2','her 2','her2 positivo','receptor hormonal','luminal','triplo negativo'],
+    title: 'O que significa HER2 positivo?',
+    text: `<strong>HER2</strong> é uma proteína presente na superfície de algumas células mamárias. Quando está em excesso (<strong>HER2 positivo</strong>), o tumor tende a crescer mais rápido — mas também responde muito bem a medicamentos específicos como o <strong>trastuzumabe (Herceptin)</strong>. 🎯\n\nOs principais subtipos de câncer de mama são:\n\n🟡 <strong>Luminal A e B</strong> — crescem estimulados por hormônios (estrogênio/progesterona). Respondem à hormonioterapia.\n🔵 <strong>HER2 positivo</strong> — crescem por excesso de HER2. Respondem a terapia-alvo.\n🔴 <strong>Triplo negativo</strong> — não tem receptor hormonal nem HER2. É tratado principalmente com quimioterapia. Mais agressivo, mas com novos tratamentos chegando.\n\nSaber o subtipo é fundamental para escolher o melhor tratamento! 🧬`,
+    source: 'INCA · Beaba do Câncer de Mama'
+  },
+
+  // ════════════════════════════════════════════════
+  // PRÓSTATA
+  // ════════════════════════════════════════════════
+  {
+    id: 'prostata-o-que-e',
+    type: 'prostata',
+    typeLabel: '💙 Próstata',
+    typeColor: 'rgb(120 193 233)',
+    keys: ['cancer de prostata','câncer de próstata','o que e cancer de prostata','o que é câncer de próstata','prostata','próstata','o que e prostata'],
+    title: 'O que é câncer de próstata?',
+    text: `O <strong>câncer de próstata</strong> acontece quando células da próstata — uma glândula pequena, do tamanho de uma noz, localizada abaixo da bexiga nos homens — começam a se multiplicar de forma descontrolada. 💙\n\nA próstata produz parte do líquido seminal e fica próxima à bexiga e à uretra, por isso quando algo muda nessa região, os primeiros sinais costumam aparecer no hábito urinário.\n\nÉ o tipo de câncer <strong>mais comum entre os homens no Brasil</strong>, ficando atrás apenas do câncer de pele não melanoma. A boa notícia: quando detectado cedo, tem <strong>altas chances de cura</strong>. 🌟`,
+    source: 'INCA · ASCO · Beaba'
+  },
+  {
+    id: 'prostata-fatores-risco',
+    type: 'prostata',
+    typeLabel: '💙 Próstata',
+    typeColor: 'rgb(120 193 233)',
+    keys: ['fatores de risco prostata','risco prostata','hereditario prostata','historico familiar prostata','quem tem mais risco prostata','homens negros cancer'],
+    title: 'Fatores de risco do câncer de próstata',
+    text: `Conhecer os fatores de risco não significa que o câncer vai acontecer — mas ajuda a entender por que o acompanhamento médico regular é tão importante. 💙\n\n<strong>Idade:</strong> é o principal fator. A maioria dos casos ocorre após os 65 anos. Antes dos 50, é raro, mas possível.\n\n<strong>Histórico familiar:</strong> ter pai, irmão ou avô com câncer de próstata aumenta o risco — especialmente se o diagnóstico foi antes dos 60 anos.\n\n<strong>Raça:</strong> homens negros têm maior incidência e, muitas vezes, formas mais agressivas. Por isso o rastreamento precoce é ainda mais importante nessa população.\n\n<strong>Alimentação e peso:</strong> dietas ricas em gordura animal e obesidade podem estar associadas a formas mais agressivas da doença.`,
+    source: 'INCA · ASCO · Beaba'
+  },
+  {
+    id: 'prostata-sintomas',
+    type: 'prostata',
+    typeLabel: '💙 Próstata',
+    typeColor: 'rgb(120 193 233)',
+    keys: ['sintomas prostata','sinais prostata','dificuldade urinar','urina','jato urinario','sangue na urina','próstata sintomas','sintomas cancer de prostata'],
+    title: 'Sinais e sintomas do câncer de próstata',
+    text: `O câncer de próstata nos estágios iniciais é <strong>silencioso</strong> — muitas vezes não dá nenhum sinal. Por isso o rastreamento regular é tão importante. ⚠️\n\nQuando os sintomas aparecem, costumam estar relacionados ao fluxo urinário:\n• Dificuldade para começar ou parar de urinar\n• <strong>Jato de urina fraco</strong> ou interrompido\n• Sensação de que a bexiga não esvaziou completamente\n• Necessidade frequente de urinar, especialmente à noite\n• Dor ou ardência ao urinar\n• Sangue na urina ou no sêmen\n\nImportante: esses sintomas também podem ser causados pela <strong>HPB</strong> (hiperplasia prostática benigna — aumento benigno da próstata), que é muito comum e não é câncer. Só o médico pode diferenciar. Em casos avançados, podem aparecer dores nos ossos ou na região lombar. 🩺`,
+    source: 'INCA · ASCO · Beaba'
+  },
+  {
+    id: 'prostata-diagnostico',
+    type: 'prostata',
+    typeLabel: '💙 Próstata',
+    typeColor: 'rgb(120 193 233)',
+    keys: ['diagnostico prostata','psa','toque retal','biopsia prostata','como diagnosticar prostata','exame prostata','antígeno prostático','antigenio prostatico'],
+    title: 'Como é diagnosticado o câncer de próstata?',
+    text: `O diagnóstico geralmente começa com dois exames simples: 🩺\n\n<strong>PSA (Antígeno Prostático Específico):</strong> exame de sangue que mede uma proteína produzida pela próstata. Valores elevados podem indicar câncer, mas também outras condições benignas — por isso o resultado sempre precisa ser avaliado pelo médico.\n\n<strong>Toque retal:</strong> permite ao médico sentir o tamanho, a textura e possíveis irregularidades na próstata. É rápido, seguro e fornece informações que o PSA sozinho não consegue. Dura poucos segundos e pode salvar vidas.\n\nSe houver suspeita, o próximo passo costuma ser a <strong>biópsia</strong> — retirada de pequenas amostras do tecido para análise. Hoje, a biópsia guiada por ressonância magnética identifica as áreas mais suspeitas com mais precisão. 💙`,
+    source: 'INCA · ASCO · Beaba'
+  },
+  {
+    id: 'prostata-estadiamento',
+    type: 'prostata',
+    typeLabel: '💙 Próstata',
+    typeColor: 'rgb(120 193 233)',
+    keys: ['estadiamento prostata','estagio prostata','estágio cancer de prostata','gleason','grupo de grau','metastase prostata','quanto avancou prostata'],
+    title: 'Estadiamento do câncer de próstata',
+    text: `O estadiamento ajuda a entender o quanto o câncer se desenvolveu e orienta as decisões de tratamento. 💙\n\n🟢 <strong>Estágio I:</strong> tumor pequeno, limitado à próstata, crescimento lento. Muitas vezes não causa sintomas.\n🟡 <strong>Estágio II:</strong> ainda dentro da próstata, mas maior ou com características de crescimento mais rápido.\n🟠 <strong>Estágio III:</strong> o câncer começou a ultrapassar os limites da próstata, podendo atingir vesículas seminais ou tecidos próximos.\n🔴 <strong>Estágio IV:</strong> há metástase — o câncer chegou a linfonodos, ossos ou outros órgãos.\n\nAlém do estágio, o <strong>escore de Gleason</strong> (ou Grupo de Grau) avalia o quão agressivas são as células do tumor. Quanto mais alto o escore, mais rápido o tumor tende a crescer. Essa informação, junto com o PSA e o estadiamento, orienta a escolha do melhor tratamento. 🩺`,
+    source: 'INCA · ASCO · Beaba'
+  },
+  {
+    id: 'prostata-tratamento',
+    type: 'prostata',
+    typeLabel: '💙 Próstata',
+    typeColor: 'rgb(120 193 233)',
+    keys: ['tratamento prostata','cirurgia prostata','prostatectomia','radioterapia prostata','vigilia ativa','hormonioterapia prostata','quimioterapia prostata','braquiterapia'],
+    title: 'Tratamentos do câncer de próstata',
+    text: `O tratamento é <strong>individualizado</strong>: tipo de tumor, estágio, idade e preferências pessoais entram na equação. Em muitos casos, mais de uma abordagem é combinada. 💊\n\n<strong>Vigilância ativa:</strong> para tumores de baixo risco e crescimento lento — monitorar com exames regulares sem tratar imediatamente. É uma escolha legítima e segura para muitos casos.\n\n<strong>Cirurgia (prostatectomia radical):</strong> retirada da próstata. Pode ser aberta, laparoscópica ou robótica. Possíveis efeitos: incontinência urinária e disfunção erétil — temporários ou permanentes, com acompanhamento especializado.\n\n<strong>Radioterapia:</strong> externa ou braquiterapia (sementes radioativas colocadas na próstata).\n\n<strong>Hormonioterapia:</strong> reduz a testosterona que alimenta o tumor. Efeitos: ondas de calor, fadiga, alterações de humor — todos merecem cuidado.\n\n<strong>Quimioterapia, terapias-alvo e imunoterapia:</strong> para casos mais avançados ou tumores específicos. 💙`,
+    source: 'INCA · ASCO · Beaba'
+  },
+  {
+    id: 'prostata-cuidados',
+    type: 'prostata',
+    typeLabel: '💙 Próstata',
+    typeColor: 'rgb(120 193 233)',
+    keys: ['cuidados prostata','vida apos prostata','efeitos colaterais prostata','disfuncao eretil prostata','incontinencia urinaria','fisioterapia pelvica','emocional prostata','rastreamento prostata','prevencao prostata'],
+    title: 'Cuidados e rastreamento',
+    text: `O cuidado vai além dos medicamentos. 💙\n\n<strong>Rastreamento:</strong> o INCA recomenda que homens a partir dos <strong>50 anos</strong> — ou <strong>45 anos</strong> para homens negros ou com histórico familiar — conversem com o médico sobre PSA e toque retal.\n\n<strong>Fisioterapia pélvica:</strong> aliada importante após a cirurgia. Ajuda a recuperar o controle urinário e pode contribuir para a função sexual.\n\n<strong>Saúde sexual:</strong> mudanças na função erétil e no desejo são reais e afetam a autoestima. Falar sobre isso com a equipe abre caminhos de cuidado que muitos homens desconhecem. Não é preciso silenciar essa parte da vida.\n\n<strong>Saúde emocional:</strong> medo, tristeza, sensação de perda — esses sentimentos são legítimos e merecem espaço. O apoio psicológico faz diferença. 💛\n\n<strong>Alimentação e exercício:</strong> frutas, vegetais, menos gordura saturada e corpo em movimento ajudam na saúde geral e no processo de tratamento.`,
+    source: 'INCA · ASCO · Beaba'
+  },
+
+  // ════════════════════════════════════════════════
+  // LEUCEMIA
+  // ════════════════════════════════════════════════
+  {
+    id: 'leucemia-o-que-e',
+    type: 'leucemia',
+    typeLabel: '🔬 Leucemia',
+    typeColor: 'rgb(255 180 71)',
+    keys: ['leucemia','o que é leucemia','cancer do sangue','câncer do sangue','leucemia aguda','leucemia crônica','linfocítica','mieloide'],
+    title: 'O que é leucemia?',
+    text: `<strong>Leucemia</strong> é um câncer que começa na medula óssea — onde o sangue é produzido. As células do sangue se multiplicam de forma descontrolada, sem conseguir amadurecer direito. 🔬\n\nExistem vários tipos:\n• <strong>Leucemia linfóide aguda (LLA)</strong> — mais comum em crianças, ótima resposta ao tratamento\n• <strong>Leucemia mieloide aguda (LMA)</strong> — mais frequente em adultos\n• <strong>Leucemia linfóide crônica (LLC)</strong> — mais lenta, em geral em idosos\n• <strong>Leucemia mieloide crônica (LMC)</strong> — tem tratamento oral muito eficaz hoje\n\n<strong>Boa notícia:</strong> a leucemia tem tratamento e, em muitos casos, cura! A LLA infantil, por exemplo, tem taxa de cura acima de 80%. 💪`,
+    source: 'INCA · Guia Beaba do Câncer, 4ª ed.'
+  },
+  {
+    id: 'leucemia-sintomas',
+    type: 'leucemia',
+    typeLabel: '🔬 Leucemia',
+    typeColor: 'rgb(255 180 71)',
+    keys: ['sintomas leucemia','sinais leucemia','hematoma leucemia','palidez','febre leucemia','sangramento nasal'],
+    title: 'Sintomas da leucemia',
+    text: `A leucemia pode dar sinais parecidos com os de doenças mais simples. Fique atento quando eles persistem ou se intensificam: ⚠️\n\n• <strong>Cansaço excessivo</strong> e palidez (por anemia)\n• <strong>Febre</strong> frequente sem causa aparente (o sistema imune fraco deixa o corpo vulnerável)\n• <strong>Sangramentos e hematomas</strong> fáceis — nariz, gengiva, manchas roxas na pele\n• <strong>Suores noturnos</strong>\n• <strong>Dor nos ossos</strong> ou articulações\n• <strong>Perda de peso</strong> sem motivo\n• <strong>Inchaço</strong> no pescoço, axila ou virilha (gânglios)\n• Baço ou fígado aumentados (sensação de peso no abdômen)\n\nO diagnóstico é feito com exame de sangue (hemograma) e, se necessário, biópsia de medula. 🩺`,
+    source: 'INCA · Guia Beaba do Câncer, 4ª ed.'
+  },
+
+  // ════════════════════════════════════════════════
+  // INTESTINO (COLORRETAL)
+  // ════════════════════════════════════════════════
+  {
+    id: 'intestino-o-que-e',
+    type: 'intestino',
+    typeLabel: '🫁 Intestino',
+    typeColor: 'rgb(74 123 191)',
+    keys: ['cancer de intestino','câncer de intestino','cancer colorretal','colorretal','cancer de colon','cólon','cancer de reto','reto','intestino grosso'],
+    title: 'Câncer colorretal (intestino): o que é?',
+    text: `O <strong>câncer colorretal</strong> afeta o intestino grosso (cólon) ou o reto — a última parte do tubo digestivo. É o segundo tipo de câncer mais comum em homens e mulheres no Brasil. 🫁\n\nA <strong>grande maioria</strong> dos casos começa como pequenos crescimentos benignos chamados <strong>pólipos</strong>. Por isso, detectar e remover os pólipos antes que se tornem cancerígenos é possível — e salva vidas!\n\nCom detecção precoce, a taxa de cura do câncer colorretal é muito alta. O problema é que frequentemente ele é detectado tarde, pois os sintomas iniciais são sutis. 🌟`,
+    source: 'INCA'
+  },
+  {
+    id: 'intestino-sintomas',
+    type: 'intestino',
+    typeLabel: '🫁 Intestino',
+    typeColor: 'rgb(74 123 191)',
+    keys: ['sintomas intestino','sangue nas fezes','sangue fezes','mudança intestino','constipação','diarreia','dor abdominal'],
+    title: 'Sinais do câncer de intestino',
+    text: `Os sinais do câncer colorretal que merecem atenção: 🔍\n\n• <strong>Sangue nas fezes</strong> (pode ser vermelho vivo ou escuro) — não ignore achando que é hemorroida!\n• <strong>Mudança nos hábitos intestinais</strong> por mais de 3 semanas: diarreia, constipação ou alternância entre os dois\n• <strong>Fezes mais finas</strong> do que o normal\n• Sensação de que o intestino não esvaziou completamente\n• <strong>Dor ou cólica abdominal</strong> persistente\n• <strong>Perda de peso</strong> sem motivo\n• Cansaço e anemia (o sangramento crônico causa anemia)\n\n🩺 O exame mais eficaz para detectar é a <strong>colonoscopia</strong> — recomendada a partir dos 45-50 anos ou antes para quem tem histórico familiar.`,
+    source: 'INCA'
+  },
+  {
+    id: 'colonoscopia',
+    type: 'intestino',
+    typeLabel: '🫁 Intestino',
+    typeColor: 'rgb(74 123 191)',
+    keys: ['colonoscopia','endoscopia','polipos','pólipos','rastreamento intestino'],
+    title: 'Colonoscopia: para que serve?',
+    text: `A <strong>colonoscopia</strong> é um exame que visualiza o interior do intestino grosso com uma câmera flexível. É a melhor forma de detectar pólipos e câncer de intestino precocemente. 📷\n\nAlém de ver, o médico pode <strong>remover os pólipos na hora</strong> — evitando que se tornem câncer no futuro!\n\nQuem deve fazer:\n• Pessoas com <strong>45 a 50 anos</strong> ou mais (recomendação geral)\n• Quem tem <strong>histórico familiar</strong> de câncer de intestino: iniciar mais cedo\n• Quem tem <strong>sangue nas fezes</strong> ou mudança nos hábitos intestinais\n\nO preparo (limpeza do intestino) é a parte mais chata. O exame em si é feito com sedação — a maioria nem lembra! 😴`,
+    source: 'INCA'
+  },
+
+  // ════════════════════════════════════════════════
+  // PULMÃO
+  // ════════════════════════════════════════════════
+  {
+    id: 'pulmao-o-que-e',
+    type: 'pulmao',
+    typeLabel: '💨 Pulmão',
+    typeColor: 'rgb(166 161 161)',
+    keys: ['cancer de pulmao','câncer de pulmão','tumor de pulmão','tumor pulmão','pulmao','pulmão'],
+    title: 'Câncer de pulmão: o que é?',
+    text: `O <strong>câncer de pulmão</strong> é um dos mais prevalentes no mundo e no Brasil. Ele começa nas células dos pulmões — os órgãos responsáveis pela respiração. 💨\n\nExistem dois grandes grupos:\n• <strong>Câncer de pulmão de não-pequenas células</strong> (CPCNPC) — o mais comum (~85% dos casos). Cresce mais devagar.\n• <strong>Câncer de pulmão de pequenas células</strong> (CPPC) — menos frequente, cresce mais rápido.\n\nO <strong>tabagismo</strong> é responsável por cerca de 85% dos casos. Mas o câncer de pulmão também ocorre em não-fumantes — por poluição, exposição a radônio, amianto e outros fatores.\n\nHoje os tratamentos evoluíram muito: a imunoterapia e terapias-alvo transformaram o prognóstico de muitos pacientes. 🌟`,
+    source: 'INCA'
+  },
+  {
+    id: 'pulmao-sintomas',
+    type: 'pulmao',
+    typeLabel: '💨 Pulmão',
+    typeColor: 'rgb(166 161 161)',
+    keys: ['sintomas pulmão','tosse sangue','tosse persistente','falta de ar','dor no peito','dispneia'],
+    title: 'Sintomas do câncer de pulmão',
+    text: `O câncer de pulmão muitas vezes não dá sintomas no início — por isso é importante o rastreamento em pessoas de alto risco. Quando os sinais aparecem: ⚠️\n\n• <strong>Tosse persistente</strong> por mais de 3 semanas (ou mudança em tosse crônica)\n• <strong>Sangue na tosse</strong> ou no catarro\n• <strong>Falta de ar</strong> sem esforço\n• <strong>Dor no peito</strong> constante\n• <strong>Rouquidão</strong> persistente\n• Perda de peso e apetite\n• <strong>Pneumonias repetidas</strong> no mesmo local\n• Cansaço intenso\n\n🩺 Pessoas com mais de 50 anos, fumantes ou ex-fumantes devem conversar com o médico sobre rastreamento com <strong>tomografia de baixa dose</strong> — que pode detectar o câncer antes dos sintomas.`,
+    source: 'INCA'
+  },
+
+  // ════════════════════════════════════════════════
+  // COLO DO ÚTERO
+  // ════════════════════════════════════════════════
+  {
+    id: 'utero-o-que-e',
+    type: 'utero',
+    typeLabel: '🌺 Útero',
+    typeColor: 'rgb(187 145 234)',
+    keys: ['cancer de colo','câncer de colo do útero','colo do utero','colo uterino','cancer utero','hpv cancer','papanicolau'],
+    title: 'Câncer de colo do útero',
+    text: `O <strong>câncer de colo do útero</strong> é o terceiro mais comum em mulheres brasileiras. A boa notícia: é um dos cânceres com maior potencial de <strong>prevenção e detecção precoce</strong>! 🌺\n\nQuase todos os casos estão associados ao <strong>HPV</strong> (Papilomavírus Humano) — um vírus muito comum, transmitido pelo contato sexual.\n\nO desenvolvimento do câncer é lento: leva anos para uma lesão pré-cancerosa (displasia) se tornar câncer. Nesse intervalo, o <strong>Papanicolau</strong> consegue detectar e tratar as lesões antes que evoluam.\n\n<strong>Vacina contra HPV:</strong> disponível gratuitamente no SUS para meninas e meninos de 9 a 14 anos. Quanto antes, melhor! 💉`,
+    source: 'INCA'
+  },
+  {
+    id: 'papanicolau',
+    type: 'utero',
+    typeLabel: '🌺 Útero',
+    typeColor: 'rgb(187 145 234)',
+    keys: ['papanicolau','preventivo','exame preventivo','colposcopia','citologia','rastreamento utero'],
+    title: 'Papanicolau: quando fazer?',
+    text: `O <strong>Papanicolau</strong> (ou exame de colpocitologia oncótica) coleta células do colo do útero para verificar se há alterações. É rápido, simples e gratuito no SUS. 🩺\n\nAs recomendações do INCA:\n• Mulheres entre <strong>25 e 64 anos</strong> que já tiveram relação sexual\n• A cada <strong>3 anos</strong>, após dois exames normais seguidos com intervalo de 1 ano\n\nAlguns mitos:\n❌ "O exame é muito doloroso" — pode ser desconfortável, mas não dói muito\n❌ "Não preciso fazer se estou na menopausa" — PRECISA, até os 64 anos\n❌ "Tomei a vacina, não preciso fazer" — PRECISA! A vacina previne os tipos mais comuns de HPV, mas não todos. Os dois juntos formam a proteção ideal. ✅`,
+    source: 'INCA'
+  },
+
+  // ════════════════════════════════════════════════
+  // PERGUNTAS EMOCIONAIS / SUPORTE
+  // ════════════════════════════════════════════════
+  {
+    id: 'medo',
+    type: 'geral',
+    typeLabel: '💛 Suporte',
+    typeColor: '#e8a825',
+    keys: ['medo','assustado','assustada','ansiedade','angustia','angústia','como enfrentar','como lidar','medo de morrer','como superar'],
+    title: 'É normal sentir medo',
+    text: `Sim, é completamente normal. Um diagnóstico de câncer — seja na própria pessoa ou em alguém querido — traz uma montanha de sentimentos: medo, raiva, tristeza, incerteza. 💛\n\nAlgumas coisas que podem ajudar:\n• <strong>Informe-se</strong> com fontes confiáveis (como o Beaba 🐻 e o INCA) — o medo do desconhecido é muitas vezes maior que a realidade\n• <strong>Converse</strong> — com a equipe de saúde, com outros pacientes, com grupos de apoio\n• <strong>Psico-oncologia</strong>: o acompanhamento psicológico durante o tratamento é fundamental e faz diferença real\n• <strong>Mantenha o que puder da sua rotina</strong> — a normalidade ajuda\n• <strong>Permita-se pedir ajuda</strong> — você não precisa ser forte o tempo todo\n\nO Beaba está aqui para isso: traduzir informação em cuidado. 💙`,
+    source: 'Guia Beaba do Câncer, 4ª ed.'
+  },
+  {
+    id: 'alimentacao',
+    type: 'geral',
+    typeLabel: '🌟 Geral',
+    typeColor: '#3bbfce',
+    keys: ['alimentacao','alimentação','dieta','comida','comer','nutrição','o que comer','pode comer'],
+    title: 'Alimentação durante o tratamento',
+    text: `A alimentação durante o tratamento do câncer é muito importante — mas não existe uma "dieta anticâncer" milagrosa. O que existe é uma alimentação saudável que ajuda o corpo a se recuperar. 🥗\n\n<strong>O que geralmente ajuda:</strong>\n• Priorizar frutas, legumes, verduras e grãos integrais\n• Manter a proteína adequada (carnes, ovos, leguminosas) — essencial para recuperação\n• Beber bastante água\n• Fracionamento das refeições: várias refeições pequenas podem ser mais fáceis\n\n<strong>Cuidados comuns durante a quimio:</strong>\n• Náuseas: alimentos frios ou em temperatura ambiente costumam ser melhor tolerados\n• Mucosite (feridas na boca): alimentos macios e mornos\n• Inapetência: comer pequenas quantidades várias vezes ao dia\n\n🌟 O ideal é ter um <strong>nutricionista oncológico</strong> na equipe — disponível no SUS nos centros de tratamento.`,
+    source: 'Guia Beaba do Câncer, 4ª ed.'
+  },
+  {
+    id: 'sus-tratamento',
+    type: 'geral',
+    typeLabel: '🌟 Geral',
+    typeColor: '#3bbfce',
+    keys: ['sus','tratamento gratuito','onde tratar','hospital','oncologia sus','inca','cacon','unacon'],
+    title: 'Onde tratar câncer pelo SUS?',
+    text: `O tratamento do câncer no Brasil é oferecido <strong>gratuitamente pelo SUS</strong>! 🇧🇷\n\nA rede oncológica do SUS inclui:\n• <strong>INCA</strong> — Instituto Nacional de Câncer, referência nacional no Rio de Janeiro\n• <strong>CACON</strong> — Centros de Alta Complexidade em Oncologia: hospitais com estrutura completa\n• <strong>UNACON</strong> — Unidades de Alta Complexidade em Oncologia: menor porte, mas com tratamento especializado\n\n<strong>Como acessar:</strong>\n1. Procure uma UBS (Unidade Básica de Saúde)\n2. Com o diagnóstico, peça o encaminhamento para oncologia\n3. O médico regulará para o CACON ou UNACON mais próximo\n\nVocê pode encontrar a unidade mais próxima no site do INCA: <em>gov.br/inca</em> 🌐`,
+    source: 'INCA'
+  }
+];
+
+// ─── SUGGESTIONS POR TIPO ────────────────────────────────────────────────────
+const suggestionsByType = {
+  todos: [
+    'O que é câncer?',
+    'Quais são os tipos de tratamento?',
+    'Como enfrentar o medo?',
+    'Onde tratar pelo SUS?'
+  ],
+  infantil: [
+    'O que é câncer infantojuvenil?',
+    'Sinais de alerta em crianças',
+    'Como é o tratamento para crianças?',
+    'O que é transplante de medula?'
+  ],
+  mama: [
+    'O que é câncer de mama?',
+    'O que significa HER2 positivo?',
+    'Tratamentos para câncer de mama',
+    'Sintomas do câncer de mama'
+  ],
+  prostata: [
+    'O que é câncer de próstata?',
+    'Sintomas do câncer de próstata',
+    'O que é o PSA?',
+    'Tratamentos para próstata'
+  ],
+  leucemia: [
+    'O que é leucemia?',
+    'Tipos de leucemia',
+    'Sintomas da leucemia',
+    'Leucemia tem cura?',
+    'O que é transplante de medula?'
+  ],
+  intestino: [
+    'O que é câncer de intestino?',
+    'Sangue nas fezes é sinal de câncer?',
+    'Para que serve a colonoscopia?',
+    'Sinais do câncer colorretal'
+  ],
+  pulmao: [
+    'O que é câncer de pulmão?',
+    'Sintomas do câncer de pulmão',
+    'Tipos de câncer de pulmão',
+    'Tratamento câncer de pulmão'
+  ],
+  utero: [
+    'O que é câncer de colo do útero?',
+    'Quando devo fazer Papanicolau?',
+    'Vacina HPV protege do câncer?',
+    'HPV sempre causa câncer?'
+  ]
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let currentFilter = 'todos';
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function normalize(str) {
+  return str.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function findAnswer(input) {
+  const q = normalize(input);
+  // When a specific filter is active, search type-specific entries first, then geral
+  const specific = currentFilter === 'todos' ? knowledge : knowledge.filter(e => e.type === currentFilter);
+  const general = currentFilter === 'todos' ? [] : knowledge.filter(e => e.type === 'geral');
+  const pool = [...specific, ...general];
+
+  for (const entry of pool) {
+    if (entry.keys.some(k => q.includes(normalize(k)))) return entry;
+  }
+  // broader search: any word overlap
+  const words = q.split(' ').filter(w => w.length > 3);
+  for (const entry of pool) {
+    const entryText = normalize(entry.keys.join(' ') + ' ' + entry.title);
+    if (words.some(w => entryText.includes(w))) return entry;
+  }
+  return null;
+}
+
+// ─── UI ──────────────────────────────────────────────────────────────────────
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.remove('active');
+    b.style.background = '#fff';
+    b.style.color = b.dataset.color || '#3bbfce';
+  });
+  if (btn) {
+    btn.classList.add('active');
+    const color = btn.dataset.color || '#3bbfce';
+    btn.style.background = color;
+    btn.style.color = '#fff';
+    document.documentElement.style.setProperty('--avatar-color', color);
+  }
+  renderSuggestions();
+}
+
+// Hover: show outline for colored buttons
+document.querySelectorAll('.filter-btn').forEach(function(b) {
+  const color = b.dataset.color || '#3bbfce';
+  b.addEventListener('mouseenter', function() {
+    if (!b.classList.contains('active')) {
+      b.style.background = '#fff';
+      b.style.color = color;
+      b.style.opacity = '1';
+    }
+  });
+  b.addEventListener('mouseleave', function() {
+    if (!b.classList.contains('active')) applyButtonStyle(b, false);
+  });
+});
+
+function getFilterColor() {
+  const btn = document.querySelector(`.filter-btn[data-filter="${currentFilter}"]`);
+  return btn ? (btn.dataset.color || '#3bbfce') : '#3bbfce';
+}
+
+function renderSuggestions() {
+  const chips = document.getElementById('chips');
+  const list = suggestionsByType[currentFilter] || suggestionsByType.todos;
+  const color = getFilterColor();
+  chips.innerHTML = '';
+  list.forEach(function(s) {
+    const btn = document.createElement('button');
+    btn.className = 'chip';
+    btn.textContent = s;
+    btn.style.borderColor = color;
+    btn.style.color = color;
+    btn.addEventListener('click', function() { sendMessage(s); });
+    chips.appendChild(btn);
+  });
+}
+
+function addMessage(text, isUser, tag, tagColor) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${isUser ? 'user' : 'bot'}`;
+
+  let content = '';
+  if (!isUser && tag) {
+    content += `<span class="cancer-tag" style="background:${tagColor}20;color:${tagColor}">${tag}</span><br>`;
+  }
+  content += text;
+
+  const color = getFilterColor();
+  const userBubbleStyle = isUser ? `style="background:${color}"` : '';
+  const avatarBg = isUser ? '#e8f6f8' : color;
+  div.innerHTML = `
+    <div class="avatar" style="background:${avatarBg}">${isUser ? '👤' : '🐻'}</div>
+    <div class="bubble" ${userBubbleStyle}>${content}</div>
+  `;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = 'typing';
+  div.innerHTML = `
+    <div class="avatar">🐻</div>
+    <div class="bubble"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+  `;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+function buildBubble(entry) {
+  let html = entry.text.replace(/\n/g, '<br>');
+  if (entry.image) {
+    html += `<img src="${entry.image}" alt="${entry.title}" onerror="this.style.display='none'">`;
+  }
+  html += `<div class="source">📚 Fonte: ${entry.source}</div>`;
+  return html;
+}
+
+async function sendMessage(text) {
+  const input = text || document.getElementById('userInput').value.trim();
+  if (!input) return;
+  document.getElementById('userInput').value = '';
+
+  addMessage(input, true);
+  showTyping();
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: input })
+    });
+
+    const data = await response.json();
+    removeTyping();
+
+    if (data.error) {
+      addMessage('Ops, tive um problema técnico. Tente novamente! 🐻', false, '🌟 Beaba', '#3bbfce');
+    } else {
+      addMessage(data.reply.replace(/
+/g, '<br>'), false, null, getFilterColor());
+    }
+  } catch (err) {
+    removeTyping();
+    addMessage('Ops, não consegui me conectar agora. Tente novamente! 🐻', false, '🌟 Beaba', '#3bbfce');
+  }
+}
+
+function handleSend() {
+  sendMessage();
+}
+
+// Teclado
+document.getElementById('userInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleSend();
+});
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.filter-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() { setFilter(btn.dataset.filter, btn); });
+});
+
+renderSuggestions();
+addMessage(
+  `Oi! Eu sou o <strong>Beaba</strong>, seu guia sobre câncer.<br><br>Estou aqui para te ajudar com informações claras, acolhedoras e confiáveis. Use as abas acima ou pergunte direto.<br><br>Aviso: Estou aprendendo. Pode me corrigir :)`,
+  false, null, null
+);
+</script>
+</div><!-- .app-box -->
+</body>
+</html>
