@@ -846,16 +846,25 @@ function addFeedbackButtons(pergunta, resposta) {
   const msgs = document.getElementById('messages');
   const div = document.createElement('div');
   div.className = 'feedback-row';
-  div.innerHTML = '<span>Isso foi útil?</span><button onclick="doFeedback(this, \'' + pergunta.replace(/'/g, \'\\\'\'') + '\', \'' + resposta.replace(/'/g, \'\\\'\'') + '\', \'👍\')">👍</button><button onclick="doFeedback(this, \'' + pergunta.replace(/'/g, \'\\\'\'') + '\', \'' + resposta.replace(/'/g, \'\\\'\'') + '\', \'👎\')">👎</button>';
+
+  const label = document.createElement('span');
+  label.textContent = 'Isso foi útil?';
+  div.appendChild(label);
+
+  ['👍', '👎'].forEach(function(emoji) {
+    const btn = document.createElement('button');
+    btn.textContent = emoji;
+    btn.addEventListener('click', function() {
+      sendFeedback(pergunta, resposta, emoji);
+      div.innerHTML = '<span style="color:#3bbfce;font-size:0.78rem">Obrigada pelo feedback! ' + emoji + '</span>';
+    });
+    div.appendChild(btn);
+  });
+
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
 
-function doFeedback(btn, pergunta, resposta, tipo) {
-  const row = btn.parentElement;
-  sendFeedback(pergunta, resposta, tipo);
-  row.innerHTML = '<span style="color:#3bbfce;font-size:0.78rem">Obrigada pelo feedback! ' + tipo + '</span>';
-}
 
 const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbx2BoTnDsfgbVJ8GxSVJKa9OY6h8qUo7B5nbK_OeZstAs9RGXEH1zyn6WdSGOdDJfQE/exec';
 
