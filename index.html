@@ -200,6 +200,29 @@
   #sendBtn:hover { background: #2da8b8; }
   #sendBtn svg { color: #fff; }
 
+  /* FEEDBACK */
+  .feedback-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0 4px 40px;
+    font-size: 0.75rem;
+    color: #9ab;
+  }
+  .feedback-row button {
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all .15s;
+    width: auto;
+    height: auto;
+    border-radius: 12px;
+  }
+  .feedback-row button:hover { background: #f0f8fa; border-color: #3bbfce; }
+
   /* DISCLAIMER */
   .disclaimer {
     font-size: 0.7rem;
@@ -819,6 +842,32 @@ function buildBubble(entry) {
   return html;
 }
 
+function addFeedbackButtons(pergunta, resposta) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'feedback-row';
+  div.innerHTML = '<span>Isso foi útil?</span><button onclick="doFeedback(this, \'' + pergunta.replace(/'/g, \'\\\'\'') + '\', \'' + resposta.replace(/'/g, \'\\\'\'') + '\', \'👍\')">👍</button><button onclick="doFeedback(this, \'' + pergunta.replace(/'/g, \'\\\'\'') + '\', \'' + resposta.replace(/'/g, \'\\\'\'') + '\', \'👎\')">👎</button>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function doFeedback(btn, pergunta, resposta, tipo) {
+  const row = btn.parentElement;
+  sendFeedback(pergunta, resposta, tipo);
+  row.innerHTML = '<span style="color:#3bbfce;font-size:0.78rem">Obrigada pelo feedback! ' + tipo + '</span>';
+}
+
+const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbx2BoTnDsfgbVJ8GxSVJKa9OY6h8qUo7B5nbK_OeZstAs9RGXEH1zyn6WdSGOdDJfQE/exec';
+
+function sendFeedback(pergunta, resposta, feedback) {
+  fetch(LOGGER_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ categoria: currentFilter, pergunta, resposta, feedback })
+  });
+}
+
 async function sendMessage(text) {
   const input = text || document.getElementById('userInput').value.trim();
   if (!input) return;
@@ -831,7 +880,7 @@ async function sendMessage(text) {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: input })
+      body: JSON.stringify({ message: input, categoria: currentFilter })
     });
 
     const data = await response.json();
@@ -840,7 +889,9 @@ async function sendMessage(text) {
     if (data.error) {
       addMessage('Ops, tive um problema técnico. Tente novamente! 🐻', false, '🌟 Beaba', '#3bbfce');
     } else {
-      addMessage(data.reply.split('\n').join('<br>'), false, null, getFilterColor());
+      const replyText = data.reply.split('\n').join('<br>');
+      addMessage(replyText, false, null, getFilterColor());
+      addFeedbackButtons(input, data.reply);
     }
   } catch (err) {
     removeTyping();
