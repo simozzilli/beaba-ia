@@ -22,13 +22,26 @@ Ao final de cada resposta, inclua discretamente em itálico: "Fonte: INCA · Bea
 
 Responda em português brasileiro. Máximo de 250 palavras.`;
 
+const LOGGER_URL = 'https://script.google.com/macros/s/AKfycbx2BoTnDsfgbVJ8GxSVJKa9OY6h8qUo7B5nbK_OeZstAs9RGXEH1zyn6WdSGOdDJfQE/exec';
+
+async function logToSheets(data) {
+  try {
+    await fetch(LOGGER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch (e) {
+    // Log silently — never break the chat because of logging
+  }
+}
+
 export default async function handler(req, res) {
-  // Permite apenas POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { message } = req.body;
+  const { message, categoria } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'Mensagem não encontrada' });
@@ -56,7 +69,17 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: data.error.message });
     }
 
-    return res.status(200).json({ reply: data.content[0].text });
+    const reply = data.content[0].text;
+
+    // Log question + response to Google Sheets (non-blocking)
+    logToSheets({
+      categoria: categoria || 'todos',
+      pergunta: message,
+      resposta: reply,
+      feedback: ''
+    });
+
+    return res.status(200).json({ reply });
 
   } catch (err) {
     return res.status(500).json({ error: 'Erro ao conectar com a IA.' });
