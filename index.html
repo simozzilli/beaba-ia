@@ -840,8 +840,7 @@ async function sendMessage(text) {
     if (data.error) {
       addMessage('Ops, tive um problema técnico. Tente novamente! 🐻', false, '🌟 Beaba', '#3bbfce');
     } else {
-      addMessage(data.reply.replace(/
-/g, '<br>'), false, null, getFilterColor());
+      addMessage(data.reply.split('\n').join('<br>'), false, null, getFilterColor());
     }
   } catch (err) {
     removeTyping();
