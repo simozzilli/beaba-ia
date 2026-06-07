@@ -812,7 +812,11 @@ function addMessage(text, isUser, tag, tagColor) {
     <div class="bubble" ${userBubbleStyle}>${content}</div>
   `;
   msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+  if (isUser) {
+    msgs.scrollTop = msgs.scrollHeight;
+  } else {
+    setTimeout(function() { div.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+  }
 }
 
 function showTyping() {
