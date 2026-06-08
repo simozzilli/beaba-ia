@@ -908,7 +908,10 @@ async function sendMessage(text) {
     if (data.error) {
       addMessage('Ops, tive um problema técnico. Tente novamente! 🐻', false, '🌟 Beaba', '#3bbfce');
     } else {
-      const replyText = data.reply.split('\n').join('<br>');
+      const replyText = data.reply
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .split('\n').join('<br>');
       addMessage(replyText, false, null, getFilterColor());
       addFeedbackButtons(input, data.reply);
     }
