@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/Logo.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Beaba.ia · admin</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif; background: #d6eef3; color: #2d3748; min-height: 100vh; }
+  button, input, select { font: inherit; color: inherit; }
+  header { background: #3bbfce; color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  header img { width: 44px; height: 44px; }
+  header h1 { font-size: 1.15rem; font-weight: 700; margin-right: auto; }
+  nav { display: flex; gap: 6px; flex-wrap: wrap; }
+  nav button, nav a { background: transparent; border: 1.5px solid rgba(255,255,255,.7); color: #fff; border-radius: 20px; padding: 6px 14px; font-weight: 700; font-size: 0.85rem; cursor: pointer; text-decoration: none; }
+  nav button.ativo { background: #fff; color: #2a9aa8; border-color: #fff; }
+  main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 16px; }
+
+  .numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .numero { background: #fff; border-radius: 16px; padding: 14px 16px; }
+  .numero b { display: block; font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+  .numero span { font-size: 0.78rem; color: #7a8fa0; font-weight: 600; }
+
+  .filtros { background: #fff; border-radius: 16px; padding: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .filtros select, .filtros input { border: 1.5px solid #c8e6eb; border-radius: 18px; padding: 7px 12px; font-size: 0.85rem; background: #f7fbfc; outline: none; }
+  .filtros input[type=search] { flex: 1; min-width: 180px; }
+  .filtros button { background: #3bbfce; color: #fff; border: none; border-radius: 18px; padding: 8px 14px; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+  .filtros .conta { font-size: 0.8rem; color: #7a8fa0; font-weight: 600; margin-left: auto; }
+
+  .painel { background: #fff; border-radius: 16px; overflow: hidden; }
+  .duas { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 16px; align-items: start; }
+  .lista { max-height: 72vh; overflow-y: auto; }
+  .item { padding: 12px 14px; border-bottom: 1px solid #eaf5f7; cursor: pointer; display: flex; flex-direction: column; gap: 5px; }
+  .item:hover, .item.ativo { background: #eaf5f7; }
+  .item .q { font-weight: 700; font-size: 0.92rem; line-height: 1.35; }
+  .item .meta { font-size: 0.74rem; color: #7a8fa0; font-weight: 600; }
+  .tags { display: flex; gap: 5px; flex-wrap: wrap; }
+  .tag { font-size: 0.7rem; font-weight: 700; border-radius: 10px; padding: 2px 8px; background: #e8f6f8; color: #2a9aa8; white-space: nowrap; }
+  .tag.quem { background: #fdf3d3; color: #9a7400; }
+  .tag.sentimento { background: #fde6ec; color: #b8405d; }
+  .tag.cartao { background: #e0526f; color: #fff; }
+  .tag.voto { background: #2d3748; color: #fff; }
+
+  .conversa { padding: 16px; display: flex; flex-direction: column; gap: 14px; max-height: 72vh; overflow-y: auto; }
+  .vazio { padding: 40px 16px; text-align: center; color: #9ab; font-weight: 600; }
+  .turno { display: flex; flex-direction: column; gap: 8px; padding-bottom: 14px; border-bottom: 1px solid #eaf5f7; }
+  .bolha { max-width: 88%; padding: 10px 14px; border-radius: 16px; font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; }
+  .bolha.user { align-self: flex-end; background: #3bbfce; color: #fff; border-radius: 16px 4px 16px 16px; }
+  .bolha.bot { background: #eaf5f7; border-radius: 4px 16px 16px 16px; }
+  .rodape { font-size: 0.74rem; color: #7a8fa0; font-weight: 600; display: flex; gap: 10px; flex-wrap: wrap; }
+  .rodape a { color: inherit; }
+  .comentario { background: #fff8e1; border: 1.5px solid #f8c311; border-radius: 12px; padding: 8px 12px; font-size: 0.88rem; max-width: 88%; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+  th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .5px; color: #7a8fa0; padding: 10px 12px; background: #f7fbfc; }
+  td { padding: 9px 12px; border-top: 1px solid #eaf5f7; vertical-align: top; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.clica { cursor: pointer; }
+  tr.clica:hover { background: #f1f9fb; }
+  .rolagem { overflow-x: auto; }
+  h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: .6px; color: #2a9aa8; padding: 14px 14px 8px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 860px) { .duas { grid-template-columns: 1fr; } .lista, .conversa { max-height: none; } }
+</style>
+</head>
+<body>
+<header>
+  <img src="/Logo.svg" alt="">
+  <h1>Beaba.ia · admin</h1>
+  <nav>
+    <button data-aba="conversas" class="ativo">Conversas</button>
+    <button data-aba="perguntas">Perguntas</button>
+    <button data-aba="custos">Custos</button>
+    <a href="/reacoes">Reações do urso</a>
+    <a href="/">Abrir o chat</a>
+  </nav>
+</header>
+<main>
+  <section class="numeros" id="numeros"></section>
+
+  <section class="filtros" id="filtros">
+    <select data-campo="tipo_cancer"></select>
+    <select data-campo="tipo_duvida"></select>
+    <select data-campo="quem"></select>
+    <select data-campo="sentimento"></select>
+    <select data-campo="avaliacao">
+      <option value="">Avaliação</option>
+      <option value="up">Ajudou</option>
+      <option value="down">Não ajudou</option>
+      <option value="comentario">Com comentário</option>
+      <option value="cartao">Com cartão de risco</option>
+    </select>
+    <input type="date" id="de" aria-label="De">
+    <input type="date" id="ate" aria-label="Até">
+    <input type="search" id="busca" placeholder="Buscar no texto">
+    <button id="csv">Baixar CSV</button>
+    <span class="conta" id="conta"></span>
+  </section>
+
+  <section id="aba-conversas" class="duas">
+    <div class="painel lista" id="lista"></div>
+    <div class="painel conversa" id="conversa"><div class="vazio">Escolha uma conversa</div></div>
+  </section>
+
+  <section id="aba-perguntas" class="painel rolagem" hidden>
+    <table><thead><tr><th>Quando</th><th>Pergunta</th><th>Etiquetas</th><th>Avaliação</th><th class="n">Palavras</th><th class="n">Tempo</th><th class="n">Custo</th></tr></thead><tbody id="tabela-perguntas"></tbody></table>
+  </section>
+
+  <section id="aba-custos" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="painel rolagem"><h2>Por dia</h2><table><thead><tr><th>Dia</th><th class="n">Conversas</th><th class="n">Respostas</th><th class="n">Custo</th><th class="n">Por resposta</th></tr></thead><tbody id="custo-dia"></tbody></table></div>
+    <div class="painel rolagem"><h2>Por modelo</h2><table><thead><tr><th>Modelo</th><th class="n">Respostas</th><th class="n">Entrada</th><th class="n">Cache lido</th><th class="n">Cache escrito</th><th class="n">Saída</th><th class="n">Buscas web</th><th class="n">Custo</th></tr></thead><tbody id="custo-modelo"></tbody></table></div>
+    <div class="painel rolagem"><h2>Por tipo de dúvida</h2><table><thead><tr><th>Tipo de dúvida</th><th class="n">Respostas</th><th class="n">Custo</th><th class="n">Por resposta</th><th class="n">Tempo médio</th></tr></thead><tbody id="custo-duvida"></tbody></table></div>
+  </section>
+</main>
+
+<script>
+const ROTULO = { tipo_cancer: 'Tipo de câncer', tipo_duvida: 'Tipo de dúvida', quem: 'Quem fala', sentimento: 'Sentimento' };
+const $ = function(id) { return document.getElementById(id); };
+const esc = function(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+const texto = function(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'); };
+const legivel = function(v) { return String(v || '').replace(/_/g, ' '); };
+const usd = function(v) { return 'US$ ' + v.toFixed(v < 1 ? 4 : 2); };
+const milhar = function(v) { return Math.round(v).toLocaleString('pt-BR'); };
+const quando = function(iso) { return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
+const dia = function(iso) { const d = new Date(iso); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const palavras = function(t) { return t.trim().split(/\s+/).length; };
+
+let TUDO = [];        // todas as respostas, mais recentes primeiro
+let sessaoAberta = '';
+
+function tags(r) {
+  const t = [];
+  if (r.tipo_cancer) t.push('<span class="tag">' + esc(legivel(r.tipo_cancer)) + '</span>');
+  if (r.tipo_duvida) t.push('<span class="tag">' + esc(legivel(r.tipo_duvida)) + '</span>');
+  if (r.quem) t.push('<span class="tag quem">' + esc(legivel(r.quem)) + '</span>');
+  if (r.sentimento) t.push('<span class="tag sentimento">' + esc(legivel(r.sentimento)) + '</span>');
+  r.cartoes.split(' ').filter(Boolean).forEach(function(c) { t.push('<span class="tag cartao">' + esc(c) + '</span>'); });
+  return t.join('');
+}
+const avaliacao = function(r) {
+  return (r.voto === 'up' ? '<span class="tag voto">ajudou</span>' : r.voto === 'down' ? '<span class="tag voto">não ajudou</span>' : '') +
+    (r.comentario ? '<span class="tag voto">comentário</span>' : '');
+};
+
+function filtradas() {
+  const f = {};
+  document.querySelectorAll('#filtros select').forEach(function(s) { f[s.dataset.campo] = s.value; });
+  const busca = $('busca').value.trim().toLowerCase(), de = $('de').value, ate = $('ate').value;
+  return TUDO.filter(function(r) {
+    for (const k of Object.keys(ROTULO)) if (f[k] && r[k] !== f[k]) return false;
+    if (f.avaliacao === 'up' || f.avaliacao === 'down') { if (r.voto !== f.avaliacao) return false; }
+    if (f.avaliacao === 'comentario' && !r.comentario) return false;
+    if (f.avaliacao === 'cartao' && !r.cartoes) return false;
+    if (de && dia(r.criada_em) < de) return false;
+    if (ate && dia(r.criada_em) > ate) return false;
+    if (busca && (r.pergunta + ' ' + r.resposta + ' ' + r.comentario).toLowerCase().indexOf(busca) < 0) return false;
+    return true;
+  });
+}
+
+function agrupar(lista, chave) {
+  const m = new Map();
+  lista.forEach(function(r) { const k = chave(r); if (!m.has(k)) m.set(k, []); m.get(k).push(r); });
+  return m;
+}
+const soma = function(lista, campo) { return lista.reduce(function(s, r) { return s + r[campo]; }, 0); };
+
+function desenhar() {
+  const rs = filtradas();
+  const sessoes = agrupar(rs, function(r) { return r.sessao; });
+  const custo = soma(rs, 'custo_usd');
+  $('conta').textContent = rs.length + ' respostas em ' + sessoes.size + ' conversas';
+  $('numeros').innerHTML = [
+    [sessoes.size, 'Conversas'], [rs.length, 'Respostas'],
+    [rs.filter(function(r) { return r.voto === 'up'; }).length + ' / ' + rs.filter(function(r) { return r.voto === 'down'; }).length, 'Ajudou / não ajudou'],
+    [rs.filter(function(r) { return r.comentario; }).length, 'Comentários'],
+    [usd(custo), 'Custo de API'], [rs.length ? usd(custo / rs.length) : '—', 'Custo por resposta'],
+    [rs.length ? (soma(rs, 'ms') / rs.length / 1000).toFixed(1) + ' s' : '—', 'Tempo médio de resposta'],
+  ].map(function(n) { return '<div class="numero"><b>' + n[0] + '</b><span>' + n[1] + '</span></div>'; }).join('');
+
+  // conversas
+  $('lista').innerHTML = [...sessoes].map(function(par) {
+    const s = par[0], lista = par[1].slice().reverse(), primeira = lista[0];
+    const marcas = [...new Set(lista.map(tags).join('').match(/<span[^>]*>[^<]*<\/span>/g) || [])].slice(0, 6).join('');
+    return '<div class="item' + (s === sessaoAberta ? ' ativo' : '') + '" data-sessao="' + esc(s) + '"><div class="q">' + esc(primeira.pergunta.slice(0, 110)) + '</div>' +
+      '<div class="tags">' + marcas + [...new Set(lista.map(avaliacao))].join('') + '</div>' +
+      '<div class="meta">' + quando(primeira.criada_em) + ' · ' + lista.length + (lista.length === 1 ? ' resposta' : ' respostas') + ' · ' + usd(soma(lista, 'custo_usd')) + '</div></div>';
+  }).join('') || '<div class="vazio">Nenhuma conversa</div>';
+
+  // perguntas
+  $('tabela-perguntas').innerHTML = rs.map(function(r) {
+    return '<tr class="clica" data-sessao="' + esc(r.sessao) + '"><td>' + quando(r.criada_em) + '</td><td>' + esc(r.pergunta.slice(0, 200)) + '</td><td><div class="tags">' + tags(r) + '</div></td><td><div class="tags">' + avaliacao(r) + '</div>' +
+      (r.comentario ? '<div style="margin-top:4px">' + esc(r.comentario) + '</div>' : '') + '</td><td class="n">' + palavras(r.resposta) + '</td><td class="n">' + (r.ms / 1000).toFixed(1) + ' s</td><td class="n">' + usd(r.custo_usd) + '</td></tr>';
+  }).join('');
+
+  // custos
+  const linha = function(nome, lista, extra) {
+    const c = soma(lista, 'custo_usd');
+    return '<tr><td>' + esc(nome) + '</td>' + extra(lista, c) + '</tr>';
+  };
+  $('custo-dia').innerHTML = [...agrupar(rs, function(r) { return dia(r.criada_em); })].map(function(p) {
+    return linha(p[0].split('-').reverse().join('/'), p[1], function(l, c) {
+      return '<td class="n">' + agrupar(l, function(r) { return r.sessao; }).size + '</td><td class="n">' + l.length + '</td><td class="n">' + usd(c) + '</td><td class="n">' + usd(c / l.length) + '</td>';
+    });
+  }).join('');
+  $('custo-modelo').innerHTML = [...agrupar(rs, function(r) { return r.modelo; })].map(function(p) {
+    return linha(p[0], p[1], function(l, c) {
+      return '<td class="n">' + l.length + '</td>' + ['tokens_entrada', 'tokens_cache_lido', 'tokens_cache_escrito', 'tokens_saida', 'buscas_web'].map(function(k) { return '<td class="n">' + milhar(soma(l, k)) + '</td>'; }).join('') + '<td class="n">' + usd(c) + '</td>';
+    });
+  }).join('');
+  $('custo-duvida').innerHTML = [...agrupar(rs, function(r) { return r.tipo_duvida || 'sem etiqueta'; })].sort(function(a, b) { return soma(b[1], 'custo_usd') - soma(a[1], 'custo_usd'); }).map(function(p) {
+    return linha(legivel(p[0]), p[1], function(l, c) {
+      return '<td class="n">' + l.length + '</td><td class="n">' + usd(c) + '</td><td class="n">' + usd(c / l.length) + '</td><td class="n">' + (soma(l, 'ms') / l.length / 1000).toFixed(1) + ' s</td>';
+    });
+  }).join('');
+}
+
+function abrir(sessao) {
+  sessaoAberta = sessao;
+  const lista = TUDO.filter(function(r) { return r.sessao === sessao; }).reverse();
+  $('conversa').innerHTML = lista.map(function(r) {
+    const fontes = JSON.parse(r.fontes || '[]').map(function(f) { return '<a href="' + esc(f.url) + '" target="_blank" rel="noopener">' + esc(f.fonte + ': ' + f.titulo) + '</a>'; }).join(' · ');
+    return '<div class="turno"><div class="bolha user">' + esc(r.pergunta) + '</div><div class="bolha bot">' + texto(r.resposta) + '</div>' +
+      '<div class="tags">' + tags(r) + (r.reacao ? '<span class="tag">urso: ' + esc(r.reacao) + '</span>' : '') + avaliacao(r) + '</div>' +
+      (r.comentario ? '<div class="comentario">' + esc(r.comentario) + '</div>' : '') +
+      '<div class="rodape"><span>' + quando(r.criada_em) + '</span><span>' + palavras(r.resposta) + ' palavras</span><span>' + (r.ms / 1000).toFixed(1) + ' s</span><span>' + usd(r.custo_usd) + '</span><span>' + esc(r.modelo) + '</span>' + (fontes ? '<span>' + fontes + '</span>' : '<span>sem fonte</span>') + '</div></div>';
+  }).join('');
+  document.querySelectorAll('#lista .item').forEach(function(i) { i.classList.toggle('ativo', i.dataset.sessao === sessao); });
+}
+
+function aba(nome) {
+  ['conversas', 'perguntas', 'custos'].forEach(function(a) { $('aba-' + a).hidden = a !== nome; });
+  document.querySelectorAll('nav button').forEach(function(b) { b.classList.toggle('ativo', b.dataset.aba === nome); });
+}
+
+function baixarCsv() {
+  const campos = ['id', 'criada_em', 'sessao', 'pergunta', 'resposta', 'tipo_cancer', 'tipo_duvida', 'quem', 'sentimento', 'reacao', 'cartoes', 'voto', 'comentario', 'modelo', 'custo_usd', 'ms'];
+  const celula = function(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+  const csv = '﻿' + [campos.join(';')].concat(filtradas().map(function(r) { return campos.map(function(c) { return celula(r[c]); }).join(';'); })).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'beaba-ia-respostas.csv';
+  a.click();
+}
+
+document.querySelector('nav').addEventListener('click', function(e) { if (e.target.dataset.aba) aba(e.target.dataset.aba); });
+$('filtros').addEventListener('input', desenhar);
+$('csv').addEventListener('click', baixarCsv);
+$('lista').addEventListener('click', function(e) { const i = e.target.closest('.item'); if (i) abrir(i.dataset.sessao); });
+$('tabela-perguntas').addEventListener('click', function(e) { const tr = e.target.closest('tr'); if (tr) { aba('conversas'); abrir(tr.dataset.sessao); } });
+
+fetch('/api/admin/dados').then(function(r) { return r.json(); }).then(function(d) {
+  TUDO = d.respostas;
+  document.querySelectorAll('#filtros select[data-campo]').forEach(function(s) {
+    const campo = s.dataset.campo;
+    if (!ROTULO[campo]) return;
+    const valores = [...new Set(TUDO.map(function(r) { return r[campo]; }).filter(Boolean))].sort();
+    s.innerHTML = '<option value="">' + ROTULO[campo] + '</option>' + valores.map(function(v) { return '<option value="' + esc(v) + '">' + esc(legivel(v)) + '</option>'; }).join('');
+  });
+  desenhar();
+});
+</script>
+</body>
+</html>

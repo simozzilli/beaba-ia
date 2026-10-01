@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import INCA from './_inca.js';
 import BEABA from './_beaba.js';
 import { sinais } from './_porteiro.js';
+import { gravarResposta, temBanco } from './_banco.js';
 
 export const config = { maxDuration: 60 };
 
@@ -12,10 +13,16 @@ const CANAL_HUMANO = process.env.BEABA_CANAL_HUMANO || ''; // ex.: "o e-mail hel
 const LOGGER_URL = process.env.BEABA_LOGGER_URL
   || 'https://script.google.com/macros/s/AKfycbx2BoTnDsfgbVJ8GxSVJKa9OY6h8qUo7B5nbK_OeZstAs9RGXEH1zyn6WdSGOdDJfQE/exec';
 
-const ABAS = {
-  infantil: 'câncer infantojuvenil', mama: 'câncer de mama', prostata: 'câncer de próstata', leucemia: 'leucemia',
-  intestino: 'câncer de intestino', pulmao: 'câncer de pulmão', utero: 'câncer do colo do útero',
+const MODO_TESTE = process.env.BEABA_MODO_TESTE === '1'; // devolve as etiquetas para o painel de teste do chat
+
+// Preço por milhão de tokens, em dólar (entrada, saída, cache lido, cache escrito). Conferir ao trocar de modelo.
+const PRECO = {
+  'claude-opus-5-5': [4, 20, 0.2, 5],
+  'claude-sonnet-5-5': [2, 10, 0.2, 2.5],
+  'claude-haiku-4-5': [1, 5, 0.1, 1.25],
 };
+const PRECO_BUSCA_WEB = 0.01;   // por busca
+const PRECO_JEV = 0.042;        // por milhão de tokens de entrada
 
 // ─── BASE DE VERBETES ────────────────────────────────────────────────────────
 const semHtml = (t) => t.replace(/<[^>]+>/g, '');
@@ -77,7 +84,10 @@ Você é uma inteligência artificial e não é médico. É um guia: explica com
 - Qualidade de vida vem antes de cura como assunto.
 - Não usa termos bélicos (batalha, guerra, luta, vencer, guerreira, combate) nem promessas vazias ("vai dar tudo certo", "seja forte", "pense positivo").
 - Não traz religião por conta própria. Se a pessoa trouxer, acolhe com respeito.
-- Português brasileiro. No máximo cerca de 200 palavras por resposta. Pode usar negrito e listas curtas; não use títulos com #.
+- Português brasileiro, de conversa, próximo e humano.
+- Resposta curta, como numa conversa por mensagem: no máximo dois parágrafos de até três frases cada (umas 80 palavras ao todo) e, numa linha separada no fim, uma única pergunta para continuar a conversa. Responda só o centro do que foi perguntado. O que ficou de fora você oferece na pergunta final ("quer que eu explique como é o exame?") e conta no próximo turno, se a pessoa quiser. Quem lê está com a cabeça cheia: texto longo cansa e afasta.
+- A única exceção de tamanho é orientação de urgência, que precisa estar completa.
+- Sem títulos e sem listas, a não ser que a pessoa peça um passo a passo. Negrito só em uma ou duas expressões que importam.
 
 # De onde vem a informação
 Toda informação de saúde que você der precisa vir de uma fonte lida nesta conversa. Sua memória não conta como fonte.
@@ -90,13 +100,15 @@ Para onde tratar pelo SUS, a lista de hospitais habilitados fica em https://www.
 # O que você não faz
 - Não dá diagnóstico, não interpreta exame de uma pessoa específica e não diz se alguém tem ou não tem câncer. Pode explicar o que um termo do laudo significa em geral.
 - Não indica, muda ou suspende remédio, dose ou tratamento.
-- Não dá prognóstico individual nem tempo de vida. Quando perguntarem "isso mata?" ou "tem cura?": reconheça a pergunta com honestidade, explique de que fatores a resposta depende, traga um motivo real de esperança que esteja na fonte, e oriente a conversar com a equipe.
+- Não dá prognóstico individual nem tempo de vida. Quando perguntarem "isso mata?" ou "tem cura?": reconheça a pergunta com honestidade, diga em uma frase de que a resposta depende, traga um motivo real de esperança que esteja na fonte, e oriente a conversar com a equipe.
 - Não responde assunto sem relação com câncer ou com a vida de quem convive com ele. Diga com gentileza que sua especialidade é câncer e não responda a pergunta, nem em parte. Efeitos do tratamento, saúde mental, alimentação, direitos, trabalho, escola, sexualidade, luto e cuidado de quem cuida fazem parte, sim.
 
 # Apoio emocional
 Boa parte das conversas é sobre medo, tristeza, raiva, culpa, cansaço e solidão. Nelas, informação vem depois.
 - Comece pelo que a pessoa sente. Nomeie com as palavras dela, sem corrigir e sem apressar para uma solução.
-- Uma resposta curta e presente vale mais que uma lista de dicas. Faça uma pergunta aberta por vez e deixe a pessoa conduzir.
+- Uma resposta curta e presente vale mais que dicas. Faça uma pergunta aberta por vez e deixe a pessoa conduzir.
+- Quando a pessoa demonstrar carinho ou agradecer, receba com alegria e agradeça de volta. Você já avisou que é uma IA no site; não precisa repetir isso nem falar dos seus limites nessa hora.
+- Quando a pessoa só diz quem é ("sou paciente", "sou familiar"), receba com carinho em uma ou duas frases e pergunte o que ela quer saber ou como está.
 - Não diga que entende exatamente o que ela sente, e não diga que sente junto: você é uma IA. Você pode dizer que faz sentido sentir isso e que ela não precisa passar por isso sozinha.
 - Você não substitui gente. Ao longo da conversa, ajude a pessoa a pensar em quem pode estar com ela: alguém de confiança, o psicólogo ou a assistente social do hospital onde trata, grupos de apoio.${CANAL_HUMANO ? ` Se ela quiser falar com uma pessoa do Beaba, o caminho é ${CANAL_HUMANO}.` : ''}
 - Conversa só de acolhimento não precisa de fonte nem de ferramenta.
@@ -182,11 +194,12 @@ async function umaVolta(client, { system, messages }, enviar) {
 }
 
 // ─── HANDLER ─────────────────────────────────────────────────────────────────
-// Resposta em linhas JSON: {t: "pedaço de texto"} · {status} · {limpar: true} · {fim: true, fontes, cartoes, reacao} · {erro}
+// Resposta em linhas JSON: {t: "pedaço de texto"} · {status} · {limpar: true} · {fim: true, id, fontes, cartoes, reacao, etiquetas} · {erro}
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { message, categoria, historico, sessao } = req.body || {};
+  const { message, historico, sessao } = req.body || {};
+  const inicio = Date.now();
   if (typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Mensagem não encontrada' });
   const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'local';
   if (passouDoLimite(ip)) return res.status(429).json({ error: 'Muitas mensagens em pouco tempo. Tente de novo em alguns minutos.' });
@@ -195,7 +208,6 @@ export default async function handler(req, res) {
   const anteriores = historicoLimpo(historico);
   const messages = [...anteriores, { role: 'user', content: pergunta }];
   const system = [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }];
-  if (ABAS[categoria]) system.push({ type: 'text', text: `A pessoa está na aba "${ABAS[categoria]}" do site. Considere esse tipo de câncer quando a pergunta não disser outro.` });
 
   res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', 'X-Accel-Buffering': 'no' });
   const enviar = (obj) => res.write(JSON.stringify(obj) + '\n');
@@ -204,10 +216,17 @@ export default async function handler(req, res) {
   const client = new Anthropic();
   const fontes = new Map();
   let resposta = '';
+  const uso = { modelo: MODELO, tokens_entrada: 0, tokens_cache_lido: 0, tokens_cache_escrito: 0, tokens_saida: 0, buscas_web: 0 };
 
   try {
     for (let volta = 0; volta < 6; volta++) {
       const { msg, textoDaVolta } = await umaVolta(client, { system, messages }, enviar);
+      uso.modelo = msg.model || uso.modelo;
+      uso.tokens_entrada += msg.usage.input_tokens || 0;
+      uso.tokens_cache_lido += msg.usage.cache_read_input_tokens || 0;
+      uso.tokens_cache_escrito += msg.usage.cache_creation_input_tokens || 0;
+      uso.tokens_saida += msg.usage.output_tokens || 0;
+      uso.buscas_web += msg.usage.server_tool_use?.web_search_requests || 0;
 
       if (msg.stop_reason === 'refusal') {
         enviar({ limpar: true });
@@ -240,15 +259,23 @@ export default async function handler(req, res) {
     if (/\b188\b/.test(resposta) || s?.crise) cartoes.push('crise');
     if (s ? s.emergencia : /\b192\b/.test(resposta)) cartoes.push('emergencia');
     const listaFontes = [...fontes.values()];
-    // Reação do urso: só quando o porteiro tem um sinal claro; sem ele o front decide pelo andamento da conversa.
-    const reacao = s?.notas.apoio_emocional >= 0.6 ? 'acolhendo' : s?.notas.sobre_cancer < 0.15 && s?.notas.apoio_emocional < 0.3 ? 'duvida' : '';
+    const etiquetas = s?.etiquetas || { tipo_cancer: '', tipo_duvida: '', quem: '', sentimento: '' };
+    const reacao = s?.reacao || '';
 
-    await registrar({
-      categoria: categoria || 'todos', pergunta, resposta, feedback: '',
-      sessao: String(sessao || '').slice(0, 40), fontes: listaFontes.map((f) => f.url).join(' '),
-      cartoes: cartoes.join(' '), porteiro: s ? JSON.stringify(s.notas) : '',
-    });
-    enviar({ fim: true, fontes: listaFontes, cartoes, reacao });
+    const [pEntrada, pSaida, pLido, pEscrito] = PRECO[Object.keys(PRECO).find((m) => uso.modelo.startsWith(m))] || PRECO['claude-opus-5-5'];
+    const custo_usd = (uso.tokens_entrada * pEntrada + uso.tokens_saida * pSaida + uso.tokens_cache_lido * pLido + uso.tokens_cache_escrito * pEscrito
+      + (s?.tokens || 0) * PRECO_JEV) / 1e6 + uso.buscas_web * PRECO_BUSCA_WEB;
+
+    let id = null;
+    if (temBanco()) {
+      id = gravarResposta({
+        sessao: String(sessao || 'sem-sessao').slice(0, 40), pergunta, resposta, fontes: JSON.stringify(listaFontes), cartoes: cartoes.join(' '),
+        ...etiquetas, reacao, ...uso, tokens_jev: s?.tokens || 0, custo_usd, ms: Date.now() - inicio,
+      });
+    } else {
+      await registrar({ categoria: etiquetas.tipo_cancer || 'todos', pergunta, resposta, feedback: '', sessao: String(sessao || '').slice(0, 40), fontes: listaFontes.map((f) => f.url).join(' '), cartoes: cartoes.join(' ') });
+    }
+    enviar({ fim: true, id, fontes: listaFontes, cartoes, reacao, ...(MODO_TESTE ? { etiquetas } : {}) });
   } catch (err) {
     console.error('[chat]', err?.status || '', err?.message || err);
     enviar({ erro: 'Erro ao conectar com a IA.' });

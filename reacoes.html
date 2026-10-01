@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/Logo.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Beaba.ia · reações do urso</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif; background: #d6eef3; color: #2d3748; min-height: 100vh; }
+  button, input, textarea { font: inherit; color: inherit; }
+  header { background: #3bbfce; color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  header h1 { font-size: 1.15rem; font-weight: 700; margin-right: auto; }
+  header .placar { font-weight: 700; font-size: 0.9rem; }
+  header a { color: #fff; font-weight: 700; font-size: 0.85rem; border: 1.5px solid rgba(255,255,255,.7); border-radius: 20px; padding: 6px 14px; text-decoration: none; }
+  main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 16px; }
+
+  .original { background: #fff; border-radius: 16px; padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 520px; }
+  .original figure { text-align: center; }
+  .original img, .original .vetor { width: 100%; max-width: 200px; margin: 0 auto; display: block; }
+  figcaption { font-size: 0.76rem; color: #7a8fa0; font-weight: 600; margin-top: 8px; }
+
+  .grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .cartao { background: #fff; border-radius: 16px; padding: 30px 16px 14px; display: flex; flex-direction: column; gap: 10px; border: 2.5px solid transparent; }
+  .cartao.aprovada { border-color: #3bbfce; }
+  .cartao.ajustar { border-color: #f8c311; }
+  .cartao .urso { width: 150px; margin: 0 auto 6px; cursor: pointer; }
+  .cartao h2 { font-size: 1rem; font-weight: 700; text-align: center; }
+  .cartao p { font-size: 0.82rem; color: #5b6b7c; line-height: 1.4; text-align: center; min-height: 2.8em; }
+  .botoes { display: flex; gap: 8px; }
+  .botoes button { flex: 1; border: 1.5px solid #c8e6eb; background: #fff; border-radius: 18px; padding: 7px 0; font-weight: 700; font-size: 0.82rem; cursor: pointer; }
+  .aprovada .botoes .ok { background: #3bbfce; border-color: #3bbfce; color: #fff; }
+  .ajustar .botoes .mudar { background: #f8c311; border-color: #f8c311; }
+  textarea { width: 100%; border: 1.5px solid #c8e6eb; border-radius: 12px; padding: 8px 10px; font-size: 0.85rem; resize: vertical; min-height: 58px; outline: none; background: #f7fbfc; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Reações do urso</h1>
+  <span class="placar" id="placar"></span>
+  <a href="/">Abrir o chat</a>
+</header>
+<main>
+  <div class="original">
+    <figure><img src="https://beaba.org/wp-content/uploads/2016/04/Urso2.png" alt="Urso original"><figcaption>Original</figcaption></figure>
+    <figure><div class="vetor" id="vetor"></div><figcaption>Vetor animado</figcaption></figure>
+  </div>
+  <div class="grade" id="grade"></div>
+</main>
+
+<script src="mascote.js"></script>
+<script>
+const QUANDO = {
+  parado: 'Esperando: respira e pisca.',
+  ouvindo: 'A pessoa está digitando.',
+  pensando: 'Mensagem enviada, resposta ainda não começou.',
+  lendo: 'Consultando a base ou buscando nas fontes.',
+  falando: 'A resposta está sendo escrita.',
+  acenando: 'Boas-vindas e despedida.',
+  feliz: 'A pessoa marcou que a resposta ajudou, ou cumprimentou animada.',
+  acolhendo: 'Conversa de medo, angústia, solidão ou cansaço.',
+  carinho: 'A pessoa agradece, elogia ou diz que gosta do Beaba.',
+  alerta: 'Apareceu o cartão de emergência.',
+  surpreso: 'Assunto inesperado, ou algo deu errado.',
+  duvida: 'Mensagem confusa: não deu para entender.',
+  apaixonado: 'Muito carinho de uma vez: olhos de coração.',
+  piscadinha: 'Cumplicidade, brincadeira leve.',
+  envergonhado: 'Recebeu um elogio e ficou sem jeito.',
+  triste: 'Perda, luto ou notícia muito ruim: sente junto.',
+  concordando: 'Faz que sim: comentário enviado, combinado feito.',
+  negando: 'Faz que não, com delicadeza: desfaz um mito.',
+  respirando: 'Ansiedade aguda: inspira em 4 segundos, solta em 4.',
+  comemorando: 'Boa notícia: alta, exame bom, fim do tratamento.',
+  ideia: 'Achou a informação, teve uma ideia.',
+  dormindo: 'A conversa ficou parada por mais de um minuto e meio.',
+  firme: 'Orientação séria, dita com clareza.'
+};
+
+const grade = document.getElementById('grade');
+const estado = {};
+
+function placar() {
+  const nomes = Mascote.reacoes;
+  const ok = nomes.filter(function(n) { return estado[n] && estado[n].status === 'aprovada'; }).length;
+  const mudar = nomes.filter(function(n) { return estado[n] && estado[n].status === 'ajustar'; }).length;
+  document.getElementById('placar').textContent = ok + ' aprovadas · ' + mudar + ' para ajustar · ' + (nomes.length - ok - mudar) + ' sem resposta';
+}
+
+function salvar(nome) {
+  fetch('/api/reacoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ nome: nome }, estado[nome])) }).catch(function() {});
+  placar();
+}
+
+Mascote.criar(document.getElementById('vetor')).then(function() {});
+
+fetch('/api/reacoes').then(function(r) { return r.json(); }).catch(function() { return []; }).then(function(salvas) {
+  salvas.forEach(function(s) { estado[s.nome] = { status: s.status, nota: s.nota }; });
+  Mascote.reacoes.forEach(function(nome) {
+    estado[nome] = estado[nome] || { status: '', nota: '' };
+    const c = document.createElement('div');
+    c.className = 'cartao ' + estado[nome].status;
+    c.innerHTML = '<div class="urso" title="Repetir"></div><h2>' + nome + '</h2><p>' + QUANDO[nome] + '</p>' +
+      '<div class="botoes"><button class="ok">Aprovar</button><button class="mudar">Ajustar</button></div><textarea placeholder="O que mudar?"></textarea>';
+    const nota = c.querySelector('textarea');
+    nota.value = estado[nome].nota;
+    nota.hidden = estado[nome].status !== 'ajustar';
+    function marcar(status) {
+      estado[nome].status = estado[nome].status === status ? '' : status;
+      c.className = 'cartao ' + estado[nome].status;
+      nota.hidden = estado[nome].status !== 'ajustar';
+      if (!nota.hidden) nota.focus();
+      salvar(nome);
+    }
+    c.querySelector('.ok').addEventListener('click', function() { marcar('aprovada'); });
+    c.querySelector('.mudar').addEventListener('click', function() { marcar('ajustar'); });
+    nota.addEventListener('change', function() { estado[nome].nota = nota.value.trim(); salvar(nome); });
+    grade.appendChild(c);
+    Mascote.criar(c.querySelector('.urso')).then(function(urso) {
+      urso.reagir(nome, 0);
+      // clicar no urso repete a animação desde o começo
+      c.querySelector('.urso').addEventListener('click', function() { urso.reagir('parado', 0); setTimeout(function() { urso.reagir(nome, 0); }, 350); });
+    });
+  });
+  placar();
+});
+</script>
+</body>
+</html>
