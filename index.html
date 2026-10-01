@@ -40,6 +40,8 @@
     gap: 12px;
     flex-shrink: 0;
   }
+  #urso { width: 58px; flex-shrink: 0; margin: -6px 0 -8px; }
+  #urso svg, #urso img { display: block; width: 100%; height: auto; }
   header .title { color: #fff; }
   header .title h1 { font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
   header .title p { font-size: 0.94rem; opacity: 0.9; }
@@ -262,7 +264,7 @@
 <div class="app-box">
 
 <header>
-  <img src="Logo.svg" width="48" height="48" alt="Beaba" style="flex-shrink:0;">
+  <div id="urso"><img src="Logo.svg" width="48" height="48" alt="Beaba"></div>
   <div class="title">
     <h1>Beaba.ia</h1>
     <p>O be-a-bá do câncer com inteligência artificial.</p>
@@ -307,6 +309,7 @@
   </button>
 </div>
 
+<script src="mascote.js"></script>
 <script>
 // ─── SUGGESTIONS POR TIPO ────────────────────────────────────────────────────
 const suggestionsByType = {
@@ -483,6 +486,7 @@ function addFeedbackButtons(pergunta, resposta) {
     btn.title = item[1] === '👍' ? 'Sim, ajudou' : 'Não ajudou';
     btn.addEventListener('click', function() {
       sendFeedback(pergunta, resposta, item[1]);
+      urso.reagir(item[1] === '👍' ? 'feliz' : 'ouvindo', item[1] === '👍' ? undefined : 2500);
       div.innerHTML = '<span style="color:#3bbfce;font-size:0.78rem">Obrigado pelo feedback! ' + item[1] + '</span>';
     });
     div.appendChild(btn);
@@ -505,6 +509,7 @@ function sendFeedback(pergunta, resposta, feedback) {
 }
 
 // ─── CONVERSA ────────────────────────────────────────────────────────────────
+let urso = { reagir: function() {} }; // vira o mascote de verdade quando mascote.svg carrega
 const historico = [];
 const sessao = Math.random().toString(36).slice(2) + Date.now().toString(36);
 let enviando = false;
@@ -563,6 +568,7 @@ async function sendMessage(text) {
 
   addMessage(input, true);
   showTyping();
+  urso.reagir('pensando');
 
   let bolha = null;
   let resposta = '';
@@ -573,11 +579,12 @@ async function sendMessage(text) {
     if (ev.status && !bolha) {
       const t = document.querySelector('#typing .bubble');
       if (t) t.innerHTML = '<span class="status">' + escapar(ev.status) + '…</span>';
+      urso.reagir('lendo');
     }
     if (ev.limpar) resposta = '';
     if (ev.t) resposta += ev.t;
     if (ev.t || ev.limpar) {
-      if (!bolha) { removeTyping(); bolha = addMessage('', false, null, getFilterColor()); }
+      if (!bolha) { removeTyping(); bolha = addMessage('', false, null, getFilterColor()); urso.reagir('falando'); }
       bolha.innerHTML = formatar(resposta);
     }
     if (ev.fim) fim = ev;
@@ -616,9 +623,15 @@ async function sendMessage(text) {
     (fim.cartoes || []).forEach(addCartao);
     historico.push({ role: 'user', content: input }, { role: 'assistant', content: resposta });
     addFeedbackButtons(input, resposta);
+    const cartoes = fim.cartoes || [];
+    if (cartoes.indexOf('emergencia') >= 0) urso.reagir('alerta', 9000);
+    else if (cartoes.indexOf('crise') >= 0) urso.reagir('acolhendo', 12000);
+    else if (fim.reacao) urso.reagir(fim.reacao, fim.reacao === 'acolhendo' ? 9000 : undefined);
+    else urso.reagir('parado');
   } else {
     if (bolha) bolha.closest('.msg').remove();
     addMessage(erro || 'Ops, tive um problema técnico. Tente novamente!', false, '🌟 Beaba', '#3bbfce');
+    urso.reagir('surpreso');
   }
   enviando = false;
 }
@@ -631,11 +644,16 @@ function handleSend() {
 document.getElementById('userInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') handleSend();
 });
+document.getElementById('userInput').addEventListener('input', e => {
+  if (!enviando) urso.reagir(e.target.value ? 'ouvindo' : 'parado');
+});
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.filter-btn').forEach(function(btn) {
   btn.addEventListener('click', function() { setFilter(btn.dataset.filter, btn); });
 });
+
+Mascote.criar(document.getElementById('urso')).then(function(m) { urso = m; urso.reagir('acenando'); }).catch(function() {});
 
 renderSuggestions();
 addMessage(

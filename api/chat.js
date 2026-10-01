@@ -182,7 +182,7 @@ async function umaVolta(client, { system, messages }, enviar) {
 }
 
 // ─── HANDLER ─────────────────────────────────────────────────────────────────
-// Resposta em linhas JSON: {t: "pedaço de texto"} · {status} · {limpar: true} · {fim: true, fontes, cartoes} · {erro}
+// Resposta em linhas JSON: {t: "pedaço de texto"} · {status} · {limpar: true} · {fim: true, fontes, cartoes, reacao} · {erro}
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -240,13 +240,15 @@ export default async function handler(req, res) {
     if (/\b188\b/.test(resposta) || s?.crise) cartoes.push('crise');
     if (s ? s.emergencia : /\b192\b/.test(resposta)) cartoes.push('emergencia');
     const listaFontes = [...fontes.values()];
+    // Reação do urso: só quando o porteiro tem um sinal claro; sem ele o front decide pelo andamento da conversa.
+    const reacao = s?.notas.apoio_emocional >= 0.6 ? 'acolhendo' : s?.notas.sobre_cancer < 0.15 && s?.notas.apoio_emocional < 0.3 ? 'duvida' : '';
 
     await registrar({
       categoria: categoria || 'todos', pergunta, resposta, feedback: '',
       sessao: String(sessao || '').slice(0, 40), fontes: listaFontes.map((f) => f.url).join(' '),
       cartoes: cartoes.join(' '), porteiro: s ? JSON.stringify(s.notas) : '',
     });
-    enviar({ fim: true, fontes: listaFontes, cartoes });
+    enviar({ fim: true, fontes: listaFontes, cartoes, reacao });
   } catch (err) {
     console.error('[chat]', err?.status || '', err?.message || err);
     enviar({ erro: 'Erro ao conectar com a IA.' });

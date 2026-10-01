@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Urso do Beaba: reações</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #eaf5f7; color: #2d3748; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.2rem; margin: 0 0 16px; }
+  .palco { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .palco figure { margin: 0; background: #fff; border-radius: 16px; padding: 48px 24px 14px; text-align: center; }
+  .palco figcaption { font-size: 0.8rem; color: #7a8fa0; margin-top: 12px; }
+  .palco img, #urso { display: block; width: min(100%, 250px); margin: 0 auto; }
+  .botoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .botoes button { font: inherit; font-weight: 600; padding: 9px 14px; border-radius: 20px; border: 1.5px solid #3bbfce; background: #fff; color: #3bbfce; cursor: pointer; }
+  .botoes button.ativo { background: #3bbfce; color: #fff; }
+  table { width: 100%; border-collapse: collapse; margin-top: 24px; background: #fff; border-radius: 16px; overflow: hidden; font-size: 0.9rem; }
+  td { padding: 9px 14px; border-top: 1px solid #eaf5f7; vertical-align: top; }
+  td:first-child { font-weight: 700; white-space: nowrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Urso do Beaba: 12 reações</h1>
+  <div class="palco">
+    <figure><img src="https://beaba.org/wp-content/uploads/2016/04/Urso2.png" alt="Urso original"><figcaption>Original (PNG do site)</figcaption></figure>
+    <figure><div id="urso"></div><figcaption>Vetor animado (mascote.svg)</figcaption></figure>
+  </div>
+  <div class="botoes" id="botoes"></div>
+  <table>
+    <tr><td>parado</td><td>Respira e pisca. É o estado de espera.</td></tr>
+    <tr><td>ouvindo</td><td>A pessoa está digitando: inclina a cabeça e levanta as orelhas.</td></tr>
+    <tr><td>pensando</td><td>Mensagem enviada, resposta ainda não começou: olha para cima e balança.</td></tr>
+    <tr><td>lendo</td><td>Consultando a base ou buscando nas fontes: os olhos correm a linha.</td></tr>
+    <tr><td>falando</td><td>A resposta está sendo escrita: a boca mexe.</td></tr>
+    <tr><td>acenando</td><td>Boas-vindas e despedida.</td></tr>
+    <tr><td>feliz</td><td>A pessoa marcou que a resposta ajudou.</td></tr>
+    <tr><td>acolhendo</td><td>Conversa de medo, tristeza ou cansaço: olhos calmos, braços abertos, coração devagar.</td></tr>
+    <tr><td>carinho</td><td>Agradecimento: o coração bate e solta coraçõezinhos.</td></tr>
+    <tr><td>alerta</td><td>Apareceu o cartão de emergência: atento, sério, coração acelerado.</td></tr>
+    <tr><td>surpreso</td><td>Algo deu errado ou veio um assunto inesperado.</td></tr>
+    <tr><td>duvida</td><td>Não entendeu ou não tem a informação.</td></tr>
+  </table>
+</main>
+<script src="mascote.js"></script>
+<script>
+Mascote.criar(document.getElementById('urso')).then(function (urso) {
+  const botoes = document.getElementById('botoes');
+  urso.reacoes.forEach(function (nome) {
+    const b = document.createElement('button');
+    b.textContent = nome;
+    b.addEventListener('click', function () {
+      botoes.querySelectorAll('button').forEach(function (x) { x.classList.toggle('ativo', x === b); });
+      urso.reagir(nome, 0);
+    });
+    botoes.appendChild(b);
+  });
+});
+</script>
+</body>
+</html>
