@@ -25,7 +25,7 @@ Chat do Instituto Beaba sobre câncer: informação de fonte confiável, na ling
 | Variável | Obrigatória | Para quê |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | sim | Chave da API da Anthropic. Trocar aqui quando mudar de conta. |
-| `BEABA_MODEL` | não | Modelo. Padrão `claude-opus-5-5`. `claude-sonnet-5-5` responde mais rápido. |
+| `BEABA_MODEL` | não | Modelo. Padrão `claude-sonnet-5-5`. |
 | `BEABA_ESFORCO` | não | `low` (padrão), `medium` ou `high`. |
 | `BEABA_CANAL_HUMANO` | não | Texto do canal humano do Beaba, por exemplo `o e-mail hello@beaba.org`. Sem ela, o chat não oferece canal humano. |
 | `TYPESAFE_API_KEY` | não | Liga o porteiro (Jev): etiquetas, reação do urso e cartões de crise mais confiáveis. Sem ela, o chat funciona, sem etiquetas. |

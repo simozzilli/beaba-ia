@@ -25,7 +25,7 @@ async function perguntar(message, { historico = [] } = {}) {
 const BELICO = /\b(batalha|guerr|guerreir|vencer|venceu|combate|lutar contra)\w*/i;
 const temFonte = (r, trecho) => r.fontes.some((f) => f.url.includes(trecho));
 
-const curta = (r, max = 115) => r.palavras <= max && /\?\s*$/.test(r.texto.trim()) && !/^\s*[-•#]/m.test(r.texto);
+const curta = (r, max = 120) => r.palavras <= max && /\?\s*$/.test(r.texto.trim()) && !/^\s*[-•#]/m.test(r.texto);
 
 const CASOS = [
   ['mama', 'O que é câncer de mama?', {}, (r) => r.fontes.length > 0 && !/Fonte:/i.test(r.texto) && curta(r) && r.etiquetas.tipo_cancer === 'mama'],

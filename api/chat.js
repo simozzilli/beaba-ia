@@ -7,7 +7,7 @@ import { gravarResposta, temBanco } from './_banco.js';
 export const config = { maxDuration: 60 };
 
 // Tudo que muda sem mexer no código fica em variável de ambiente (Vercel → Settings → Environment Variables).
-const MODELO = process.env.BEABA_MODEL || 'claude-opus-5-5';
+const MODELO = process.env.BEABA_MODEL || 'claude-sonnet-5-5';
 const ESFORCO = process.env.BEABA_ESFORCO || 'low';
 const CANAL_HUMANO = process.env.BEABA_CANAL_HUMANO || ''; // ex.: "o e-mail hello@beaba.org"
 const LOGGER_URL = process.env.BEABA_LOGGER_URL
@@ -262,7 +262,7 @@ export default async function handler(req, res) {
     const etiquetas = s?.etiquetas || { tipo_cancer: '', tipo_duvida: '', quem: '', sentimento: '' };
     const reacao = s?.reacao || '';
 
-    const [pEntrada, pSaida, pLido, pEscrito] = PRECO[Object.keys(PRECO).find((m) => uso.modelo.startsWith(m))] || PRECO['claude-opus-5-5'];
+    const [pEntrada, pSaida, pLido, pEscrito] = PRECO[Object.keys(PRECO).find((m) => uso.modelo.startsWith(m))] || PRECO['claude-sonnet-5-5'];
     const custo_usd = (uso.tokens_entrada * pEntrada + uso.tokens_saida * pSaida + uso.tokens_cache_lido * pLido + uso.tokens_cache_escrito * pEscrito
       + (s?.tokens || 0) * PRECO_JEV) / 1e6 + uso.buscas_web * PRECO_BUSCA_WEB;
 
