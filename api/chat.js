@@ -13,6 +13,12 @@ const CANAL_HUMANO = process.env.BEABA_CANAL_HUMANO || ''; // ex.: "o e-mail hel
 const LOGGER_URL = process.env.BEABA_LOGGER_URL
   || 'https://script.google.com/macros/s/AKfycbx2BoTnDsfgbVJ8GxSVJKa9OY6h8qUo7B5nbK_OeZstAs9RGXEH1zyn6WdSGOdDJfQE/exec';
 
+// Etiquetas de tipo de câncer que a pessoa pode marcar no topo do chat (atalho para quem não sabe o que perguntar).
+const TEMAS = {
+  infantil: 'câncer infantojuvenil', mama: 'câncer de mama', prostata: 'câncer de próstata', leucemia: 'leucemia',
+  intestino: 'câncer de intestino', pulmao: 'câncer de pulmão', utero: 'câncer do colo do útero',
+};
+
 const MODO_TESTE = process.env.BEABA_MODO_TESTE === '1'; // devolve as etiquetas para o painel de teste do chat
 
 // Preço por milhão de tokens, em dólar (entrada, saída, cache lido, cache escrito). Conferir ao trocar de modelo.
@@ -199,7 +205,7 @@ async function umaVolta(client, { system, messages }, enviar) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { message, historico, sessao } = req.body || {};
+  const { message, historico, sessao, tema } = req.body || {};
   const inicio = Date.now();
   if (typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Mensagem não encontrada' });
   const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'local';
@@ -209,6 +215,7 @@ export default async function handler(req, res) {
   const anteriores = historicoLimpo(historico);
   const messages = [...anteriores, { role: 'user', content: pergunta }];
   const system = [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }];
+  if (TEMAS[tema]) system.push({ type: 'text', text: `A pessoa marcou o tema "${TEMAS[tema]}" no site. Considere esse tipo de câncer quando a pergunta não disser outro.` });
 
   res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', 'X-Accel-Buffering': 'no' });
   const enviar = (obj) => res.write(JSON.stringify(obj) + '\n');
